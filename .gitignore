@@ -1,0 +1,59 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go
+CoreServiceGo/server
+CoreServiceGo/*.exe
+CoreServiceGo/*.test
+CoreServiceGo/vendor/
+*.log
+
+# Python (AiWorkerPy)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv
+venv/
+ENV/
+env/
+.env
+build/
+dist/
+*.egg-info/
+
+# C# / .NET (GatewayCshard)
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Node.js / React (WebReact)
+WebReact/node_modules/
+WebReact/build/
+WebReact/dist/
+WebReact/.env.local
+WebReact/.env.development.local
+WebReact/.env.test.local
+WebReact/.env.production.local
+WebReact/npm-debug.log*
+WebReact/yarn-debug.log*
+WebReact/yarn-error.log*
+
+# Infrastructure / Docker
+Infra/mysql_data/
+Infra/redis_data/
+Infra/rabbitmq_data/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
