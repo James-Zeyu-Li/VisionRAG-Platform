@@ -1,6 +1,6 @@
 package controller
 
-import "VisionRAG/GatewayServiceGo/helper/code"
+import "VisionRAG/PublicServiceGo/helper/code"
 
 type Response struct {
 	StatusCode code.Code `json:"status_code"`

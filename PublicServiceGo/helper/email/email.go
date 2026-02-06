@@ -1,7 +1,7 @@
 package email
 
 import (
-	"VisionRAG/GatewayServiceGo/config"
+	"VisionRAG/PublicServiceGo/config"
 	"fmt"
 
 	"gopkg.in/gomail.v2"

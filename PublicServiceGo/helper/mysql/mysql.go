@@ -1,8 +1,8 @@
 package mysql
 
 import (
-	"VisionRAG/GatewayServiceGo/config"
-	"VisionRAG/GatewayServiceGo/model"
+	"VisionRAG/PublicServiceGo/config"
+	"VisionRAG/PublicServiceGo/model"
 	"fmt"
 	"time"
 

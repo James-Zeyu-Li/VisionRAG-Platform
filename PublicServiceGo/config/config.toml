@@ -27,3 +27,9 @@ port = 5672
 username = "guest"
 password = "guest"
 vhost = "/"
+
+[jwtConfig]
+expire_duration = 24
+issuer = "VisionRAG"
+subject = "Gateway"
+key = "SecretKeyChangeMe"

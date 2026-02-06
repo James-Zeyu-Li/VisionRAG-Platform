@@ -49,6 +49,7 @@ type Config struct {
 	MysqlConfig  `toml:"mysqlConfig"`
 	MainConfig   `toml:"mainConfig"`
 	Rabbitmq     `toml:"rabbitmqConfig"`
+	JwtConfig          `toml:"jwtConfig"`
 }
 
 type RedisKeyConfig struct {
@@ -63,9 +64,17 @@ var DefaultRedisKeyConfig = RedisKeyConfig{
 	IndexNamePrefix: "rag_docs:%s:",
 }
 
+type JwtConfig struct {
+	ExpireDuration int    `toml:"expire_duration"`
+	Issuer         string `toml:"issuer"`
+	Subject        string `toml:"subject"`
+	Key            string `toml:"key"`
+}
+
+
 var config *Config
 
-// InitConfig 初始化项目配置
+// Initiate configuration file
 func InitConfig() error {
 	if config == nil {
 		config = new(Config)

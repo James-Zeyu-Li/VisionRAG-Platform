@@ -1,9 +1,9 @@
 package user
 
 import (
-	"VisionRAG/GatewayServiceGo/helper/code"
-	"VisionRAG/GatewayServiceGo/controller"
-	"VisionRAG/GatewayServiceGo/service/user"
+	"VisionRAG/PublicServiceGo/controller"
+	"VisionRAG/PublicServiceGo/helper/code"
+	"VisionRAG/PublicServiceGo/service/user"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

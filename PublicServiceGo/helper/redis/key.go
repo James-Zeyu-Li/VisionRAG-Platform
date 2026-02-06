@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"VisionRAG/GatewayServiceGo/config"
+	"VisionRAG/PublicServiceGo/config"
 	"fmt"
 )
 

@@ -1,9 +1,9 @@
 package user
 
 import (
-	"VisionRAG/GatewayServiceGo/helper/mysql"
-	"VisionRAG/GatewayServiceGo/helper/utils"
-	"VisionRAG/GatewayServiceGo/model"
+	"VisionRAG/PublicServiceGo/helper/mysql"
+	"VisionRAG/PublicServiceGo/helper/utils"
+	"VisionRAG/PublicServiceGo/model"
 	"context"
 
 	"gorm.io/gorm"

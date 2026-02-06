@@ -1,10 +1,10 @@
 package main
 
 import (
-	"VisionRAG/GatewayServiceGo/config"
-	"VisionRAG/GatewayServiceGo/helper/mysql"
-	"VisionRAG/GatewayServiceGo/helper/redis"
-	"VisionRAG/GatewayServiceGo/router"
+	"VisionRAG/PublicServiceGo/config"
+	"VisionRAG/PublicServiceGo/helper/mysql"
+	"VisionRAG/PublicServiceGo/helper/redis"
+	"VisionRAG/PublicServiceGo/router"
 	"fmt"
 	"log"
 )

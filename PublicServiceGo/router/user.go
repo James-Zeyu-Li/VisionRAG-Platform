@@ -1,7 +1,7 @@
 package router
 
 import (
-	"VisionRAG/GatewayServiceGo/controller/user"
+	"VisionRAG/PublicServiceGo/controller/user"
 
 	"github.com/gin-gonic/gin"
 )

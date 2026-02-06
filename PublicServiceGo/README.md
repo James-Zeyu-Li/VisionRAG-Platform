@@ -1,12 +1,9 @@
-# VisionRAG - Gateway Service (Go)
+# VisionRAG - Public Service (Go)
 
 ## Role
-This microservice acts as the **Gateway and Authentication Provider**:
+This microservice acts as the **Public and Authentication Provider**:
 - **User Management**: Registration, Login, Captcha.
-- **Authentication**: (Future) JWT issuance and validation.
-- **Gateway**: (Future) Reverse proxy to ChatService.
-
-**Note**: This service is a placeholder/reference implementation. It is intended to be replaced by a C# (.NET 8) Gateway to leverage advanced Rate Limiting and Governance features.
+- **Authentication**: JWT issuance and validation.
 
 ## API Endpoints (Port 9091)
 - **Register**: `POST /api/v1/user/register`
@@ -15,11 +12,11 @@ This microservice acts as the **Gateway and Authentication Provider**:
 
 ## Dependencies
 - **MySQL**: Stores user data.
-- **Redis**: Stores captcha codes and (future) rate limiting counters.
+- **Redis**: Stores captcha codes.
 
 ## How to Run
 ```bash
-cd GatewayServiceGo
+cd PublicServiceGo
 go run main.go
 ```
 Or via Docker Compose in the root directory.
