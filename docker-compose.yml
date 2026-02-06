@@ -39,25 +39,40 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  core-service-go:
+  gateway-service:
     build: 
-      context: ./CoreServiceGo
+      context: ./GatewayServiceGo
       dockerfile: Dockerfile
-    container_name: visionrag-core-go
+    container_name: visionrag-gateway
     restart: always
     ports:
-      - "9091:9090"
+      - "9091:9091"
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_started
-      rabbitmq:
-        condition: service_started
-    # 覆盖配置文件中的 localhost 为服务名
     environment:
       - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
       - REDIS_HOST=redis
+
+  chat-service:
+    build: 
+      context: ./ChatServiceGo
+      dockerfile: Dockerfile
+    container_name: visionrag-chat
+    restart: always
+    ports:
+      - "9092:9092"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq
 
 volumes:
