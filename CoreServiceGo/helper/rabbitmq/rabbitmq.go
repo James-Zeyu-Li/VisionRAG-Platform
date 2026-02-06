@@ -8,8 +8,6 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// 全局connection对象
-// 所有RabbitMQ都会复用该对象
 var conn *amqp.Connection
 
 // 初始化connection
@@ -61,7 +59,8 @@ func NewWorkRabbitMQ(queue string) *RabbitMQ {
 }
 
 func (r *RabbitMQ) Publish(message []byte) error {
-	_, err := r.channel.QueueDeclare(r.Key, false, false, false, false, nil)
+	// QueueDeclare: name, durable, autoDelete, exclusive, noWait, args
+	_, err := r.channel.QueueDeclare(r.Key, true, false, false, false, nil)
 	if err != nil {
 		return err
 	}
@@ -75,7 +74,9 @@ func (r *RabbitMQ) Publish(message []byte) error {
 }
 
 func (r *RabbitMQ) Consume(handle func(msg *amqp.Delivery) error) {
-	q, err := r.channel.QueueDeclare(r.Key, false, false, false, false, nil)
+	// QueueDeclare: name, durable, autoDelete, exclusive, noWait, args
+	// 将 durable 改为 true 以解决 RabbitMQ 警告并确保持久化
+	q, err := r.channel.QueueDeclare(r.Key, true, false, false, false, nil)
 	if err != nil {
 		panic(err)
 	}

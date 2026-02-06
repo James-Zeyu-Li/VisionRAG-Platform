@@ -9,9 +9,13 @@ services:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: visionrag
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   redis:
     image: redis:6.2-alpine
@@ -34,6 +38,27 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+
+  core-service-go:
+    build: 
+      context: ./CoreServiceGo
+      dockerfile: Dockerfile
+    container_name: visionrag-core-go
+    restart: always
+    ports:
+      - "9091:9090"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    # 覆盖配置文件中的 localhost 为服务名
+    environment:
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
 
 volumes:
   mysql_data:

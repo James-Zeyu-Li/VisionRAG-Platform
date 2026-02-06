@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"os"
 
 	"github.com/BurntSushi/toml"
 )
@@ -68,10 +69,25 @@ func InitConfig() error {
 	if config == nil {
 		config = new(Config)
 	}
+	// 1. 先加载文件配置
 	if _, err := toml.DecodeFile("config/config.toml", config); err != nil {
 		log.Fatal(err.Error())
 		return err
 	}
+
+	// 2. 检查环境变量并覆盖 (用于 Docker 环境)
+	if envHost := os.Getenv("MYSQL_HOST"); envHost != "" {
+		config.MysqlConfig.MysqlHost = envHost
+	}
+	if envPort := os.Getenv("MYSQL_PORT"); envPort != "" {
+	}
+	if envHost := os.Getenv("REDIS_HOST"); envHost != "" {
+		config.RedisConfig.RedisHost = envHost
+	}
+	if envHost := os.Getenv("RABBITMQ_HOST"); envHost != "" {
+		config.Rabbitmq.RabbitmqHost = envHost
+	}
+
 	return nil
 }
 

@@ -25,6 +25,57 @@ The **VisionRAG** platform is a microservices-based AI system designed for docum
 - [ ] **Frontend Integration**: Reconnect the React Web interface to the new microservice endpoints.
 
 ## Getting Started
-1. **Infrastructure**: Run `docker-compose up -d` in the `/Infra` directory.
-2. **Launch**: Run `go run main.go` in `/CoreServiceGo`.
-3. **Verify**: Use the provided `test_endpoints.sh` to confirm database and messaging connectivity.
+
+### 1. Run Everything (Docker)
+This is the easiest way to verify the entire stack, including the Go service.
+```bash
+docker-compose up --build -d
+```
+
+### 2. Run Infrastructure Only (Local Dev)
+If you want to run the Go service locally (for debugging) but keep DBs in Docker:
+```bash
+# In the project root
+docker-compose up -d mysql redis rabbitmq
+# Then inside CoreServiceGo
+cd CoreServiceGo
+go run main.go
+```
+
+## Testing Rules (Postman / No JWT)
+
+Since JWT authentication has been removed for this transition phase, you must manually identify the user when making API calls.
+
+### 1. Register Flow
+*   **Step 1: Send Captcha**
+    *   **Method**: `POST`
+    *   **URL**: `http://localhost:9090/api/v1/user/captcha`
+    *   **Body**: `{"email": "your_email@example.com"}`
+    *   **Note**: The code is sent to your email (if configured) or stored in Redis.
+*   **Step 2: Register**
+    *   **Method**: `POST`
+    *   **URL**: `http://localhost:9090/api/v1/user/register`
+    *   **Body**: `{"email": "your_email@example.com", "password": "yourpassword", "captcha": "THE_CODE_FROM_STEP_1"}`
+
+### 2. Login Flow
+*   **Method**: `POST`
+    *   **URL**: `http://localhost:9090/api/v1/user/login`
+    *   **Body**: `{"username": "ACCOUNT_ID_FROM_REGISTER", "password": "yourpassword"}`
+    *   **Response**: You will receive a `token` field, but **ignore it**. It is a mock string. The important part is to get the `code: 1000` (success).
+
+### 3. Session Flow (Authentication via Query Param)
+Because there is no Token header parsing, you **MUST** append the `username` query parameter to let the backend know who is operating.
+
+*   **Create Session**
+    *   **Method**: `POST`
+    *   **URL**: `http://localhost:9090/api/v1/session/create?username=ACCOUNT_ID`
+    *   **Body**: `{"title": "My New Chat"}`
+
+*   **Get Session List**
+    *   **Method**: `GET`
+    *   **URL**: `http://localhost:9090/api/v1/session/list?username=ACCOUNT_ID`
+
+*   **Get History**
+    *   **Method**: `POST`
+    *   **URL**: `http://localhost:9090/api/v1/session/history?username=ACCOUNT_ID`
+    *   **Body**: `{"sessionId": "SESSION_ID_FROM_LIST"}`
