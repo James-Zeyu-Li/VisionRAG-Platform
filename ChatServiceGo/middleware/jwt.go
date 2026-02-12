@@ -26,19 +26,27 @@ func Auth() gin.HandlerFunc {
 		}
 
 		if token == "" {
+			log.Println("[Auth Middleware] No token found in Request")
 			c.JSON(http.StatusOK, res.CodeOf(code.CodeNotLogin))
 			c.Abort()
 			return
 		}
 
-		log.Println("Validating token...")
+		if len(token) > 10 {
+			log.Printf("[Auth Middleware] Validating token: %s...", token[:10])
+		} else {
+			log.Printf("[Auth Middleware] Validating token: %s", token)
+		}
+		
 		claims, err := jwt.ParseToken(token)
 		if err != nil {
-			log.Printf("Token validation failed: %v", err)
+			log.Printf("[Auth Middleware] Token validation failed: %v", err)
 			c.JSON(http.StatusOK, res.CodeOf(code.CodeInvalidToken))
 			c.Abort()
 			return
 		}
+
+		log.Printf("[Auth Middleware] Success! User: %s (ID: %d)", claims.Username, claims.UserID)
 
 		// 将解析出来的用户信息存入上下文
 		c.Set("userID", claims.UserID)

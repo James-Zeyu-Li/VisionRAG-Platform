@@ -27,3 +27,21 @@ port = 5672
 username = "guest"
 password = "guest"
 vhost = "/"
+
+[jwtConfig]
+expire_duration = 24
+issuer = "VisionRAG"
+subject = "Gateway"
+key = "SecretKeyChangeMe"
+
+
+[ragModelConfig]
+embeddingModel= "text-embedding-v4"
+chatModelName="qwen-turbo"
+docDir = "./docs"
+baseUrl="https://dashscope.aliyuncs.com/compatible-mode/v1"
+dimension=1024
+
+[voiceServiceConfig]
+voiceServiceApiKey = "baiduApiKey"
+voiceServiceSecretKey ="baiduSecretKey"

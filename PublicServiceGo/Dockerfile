@@ -28,7 +28,7 @@ COPY --from=builder /app/server .
 COPY --from=builder /app/config ./config
 
 # 暴露端口
-EXPOSE 9090
+EXPOSE 9091
 
 # 运行服务
 CMD ["./server"]

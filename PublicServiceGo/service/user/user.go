@@ -4,10 +4,12 @@ import (
 	"VisionRAG/PublicServiceGo/dao/user"
 	"VisionRAG/PublicServiceGo/helper/code"
 	"VisionRAG/PublicServiceGo/helper/email"
+	"VisionRAG/PublicServiceGo/helper/rabbitmq"
 	"VisionRAG/PublicServiceGo/helper/redis"
 	"VisionRAG/PublicServiceGo/helper/utils"
 	"VisionRAG/PublicServiceGo/helper/utils/jwt"
 	"VisionRAG/PublicServiceGo/model"
+	"log"
 )
 
 func Login(username, password string) (string, code.Code) {
@@ -26,6 +28,11 @@ func Login(username, password string) (string, code.Code) {
 	if err != nil {
 		return "", code.CodeServerBusy
 	}
+
+	// 4: 发送登录成功消息到 RabbitMQ (包含 JWT 以演示)
+	log.Printf("[MQ] Sending USER_LOGIN event for user: %s", username)
+	eventData := rabbitmq.GenerateUserLoginEvent(uint(userInformation.ID), userInformation.Username, token)
+	_ = rabbitmq.RMQUserEvent.Publish(eventData)
 
 	return token, code.CodeSuccess
 }
@@ -52,16 +59,23 @@ func Register(email_, password, captcha string) (string, code.Code) {
 		return "", code.CodeServerBusy
 	}
 
-	//5：将账号一并发送到对应邮箱上去，后续需要账号登录
-	if err := email.SendCaptcha(email_, username, "Your account ID"); err != nil {
-		return "", code.CodeServerBusy
-	}
+	// 5：开发模式：在控制台打印账号 ID，跳过真实的邮件发送
+	log.Printf("[DEV MODE] Registration Success. Email: %s, Assigned Account ID: %s", email_, username)
+	/*
+		if err := email.SendCaptcha(email_, username, "Your account ID"); err != nil {
+			return "", code.CodeServerBusy
+		}
+	*/
 
 	// 6:生成Token
 	token, err := jwt.GenerateToken(uint(userInformation.ID), userInformation.Username)
 	if err != nil {
 		return "", code.CodeServerBusy
 	}
+
+	// 7: 发送注册成功消息到 RabbitMQ
+	eventData := rabbitmq.GenerateUserRegisteredEvent(uint(userInformation.ID), userInformation.Username, userInformation.Email)
+	_ = rabbitmq.RMQUserEvent.Publish(eventData)
 
 	return token, code.CodeSuccess
 }
@@ -74,10 +88,13 @@ func SendCaptcha(email_ string) code.Code {
 		return code.CodeServerBusy
 	}
 
-	//2:再进行远程发送
-	if err := email.SendCaptcha(email_, send_code, "Your verification code"); err != nil {
-		return code.CodeServerBusy
-	}
+	// 2: 开发模式：控制台打印验证码，跳过邮件发送
+	log.Printf("[DEV MODE] Verification Code for %s is: %s", email_, send_code)
+	/*
+		if err := email.SendCaptcha(email_, send_code, "Your verification code"); err != nil {
+			return code.CodeServerBusy
+		}
+	*/
 
 	return code.CodeSuccess
 }

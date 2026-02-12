@@ -1,8 +1,8 @@
 package rabbitmq
 
 var (
-
 	RMQMessage *RabbitMQ
+	RMQUserEvent *RabbitMQ
 )
 
 func InitRabbitMQ() {
@@ -13,9 +13,16 @@ func InitRabbitMQ() {
 	RMQMessage = NewWorkRabbitMQ("Message")
 	go RMQMessage.Consume(MQMessage)
 
+	RMQUserEvent = NewWorkRabbitMQ("UserEvent")
+	go RMQUserEvent.Consume(MQUserEvent)
 }
 
 // DestroyRabbitMQ 销毁RabbitMQ
 func DestroyRabbitMQ() {
-	RMQMessage.Destroy()
+	if RMQMessage != nil {
+		RMQMessage.Destroy()
+	}
+	if RMQUserEvent != nil {
+		RMQUserEvent.Destroy()
+	}
 }

@@ -49,6 +49,9 @@ type Config struct {
 	MysqlConfig  `toml:"mysqlConfig"`
 	MainConfig   `toml:"mainConfig"`
 	Rabbitmq     `toml:"rabbitmqConfig"`
+	JwtConfig          `toml:"jwtConfig"`
+	RagModelConfig RagModelConfig `toml:"ragModelConfig"`
+	VoiceServiceConfig VoiceServiceConfig `toml:"voiceServiceConfig"`
 }
 
 type RedisKeyConfig struct {
@@ -61,6 +64,26 @@ var DefaultRedisKeyConfig = RedisKeyConfig{
 	CaptchaPrefix:   "captcha:%s",
 	IndexName:       "rag_docs:%s:idx",
 	IndexNamePrefix: "rag_docs:%s:",
+}
+
+type JwtConfig struct {
+	ExpireDuration int    `toml:"expire_duration"`
+	Issuer         string `toml:"issuer"`
+	Subject        string `toml:"subject"`
+	Key            string `toml:"key"`
+}
+
+type RagModelConfig struct {
+	RagEmbeddingModel string `toml:"embeddingModel"`
+	RagChatModelName  string `toml:"chatModelName"`
+	RagDocDir         string `toml:"docDir"`
+	RagBaseUrl        string `toml:"baseUrl"`
+	RagDimension      int    `toml:"dimension"`
+}
+
+type VoiceServiceConfig struct {
+	VoiceServiceApiKey    string `toml:"voiceServiceApiKey"`
+	VoiceServiceSecretKey string `toml:"voiceServiceSecretKey"`
 }
 
 var config *Config

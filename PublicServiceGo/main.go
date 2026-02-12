@@ -4,6 +4,7 @@ import (
 	"VisionRAG/PublicServiceGo/config"
 	"VisionRAG/PublicServiceGo/helper/mysql"
 	"VisionRAG/PublicServiceGo/helper/redis"
+	"VisionRAG/PublicServiceGo/helper/rabbitmq"
 	"VisionRAG/PublicServiceGo/router"
 	"fmt"
 	"log"
@@ -28,6 +29,9 @@ func main() {
 	// 初始化 redis
 	redis.Init()
 	log.Println("redis init success")
+
+	rabbitmq.InitRabbitMQ()
+	log.Println("rabbitmq init success")
 
 	log.Printf("Starting server on %s:%d\n", host, port)
 	err := StartServer(host, port)

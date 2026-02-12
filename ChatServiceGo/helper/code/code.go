@@ -25,6 +25,7 @@ const (
 	AIModelNotFind    Code = 5001
 	AIModelCannotOpen Code = 5002
 	AIModelFail       Code = 5003
+	TTSFail           Code = 5004
 )
 
 var msg = map[Code]string{
@@ -48,6 +49,7 @@ var msg = map[Code]string{
 	AIModelNotFind:    "模型不存在",
 	AIModelCannotOpen: "无法打开模型",
 	AIModelFail:       "模型运行失败",
+	TTSFail:           "语音合成失败",
 }
 
 func (code Code) Code() int64 {

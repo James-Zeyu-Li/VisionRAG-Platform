@@ -17,10 +17,9 @@ func InitRouter() *gin.Engine {
 	{
 		RegisterSessionRouter(authGroup.Group("/session"))
 		
-		// 预留 AI, Image, File 接口位置
-		// AIRouter(authGroup.Group("/AI"))
-		// ImageRouter(authGroup.Group("/image"))
-		// FileRouter(authGroup.Group("/file"))
+		AIRouter(authGroup.Group("/AI"))
+		ImageRouter(authGroup.Group("/image"))
+		FileRouter(authGroup.Group("/file"))
 	}
 
 	return r
