@@ -46,7 +46,7 @@ services:
     container_name: visionrag-public
     restart: always
     ports:
-      - "9091:9091"
+      - "9090:9090"
     depends_on:
       mysql:
         condition: service_healthy
@@ -57,6 +57,7 @@ services:
       - MYSQL_PORT=3306
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
+      - CHAT_SERVICE_ADDR=http://chat-service:9092
 
   chat-service:
     build: 
