@@ -3,8 +3,8 @@ package main
 import (
 	"VisionRAG/PublicServiceGo/config"
 	"VisionRAG/PublicServiceGo/helper/mysql"
-	"VisionRAG/PublicServiceGo/helper/redis"
 	"VisionRAG/PublicServiceGo/helper/rabbitmq"
+	"VisionRAG/PublicServiceGo/helper/redis"
 	"VisionRAG/PublicServiceGo/router"
 	"fmt"
 	"log"

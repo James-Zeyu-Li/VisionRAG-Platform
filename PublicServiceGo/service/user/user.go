@@ -3,7 +3,6 @@ package user
 import (
 	"VisionRAG/PublicServiceGo/dao/user"
 	"VisionRAG/PublicServiceGo/helper/code"
-	"VisionRAG/PublicServiceGo/helper/email"
 	"VisionRAG/PublicServiceGo/helper/rabbitmq"
 	"VisionRAG/PublicServiceGo/helper/redis"
 	"VisionRAG/PublicServiceGo/helper/utils"
@@ -29,9 +28,9 @@ func Login(username, password string) (string, code.Code) {
 		return "", code.CodeServerBusy
 	}
 
-	// 4: 发送登录成功消息到 RabbitMQ (包含 JWT 以演示)
+	// 4: 发送登录成功消息到 RabbitMQ (仅发送基本信息，不再包含 JWT)
 	log.Printf("[MQ] Sending USER_LOGIN event for user: %s", username)
-	eventData := rabbitmq.GenerateUserLoginEvent(uint(userInformation.ID), userInformation.Username, token)
+	eventData := rabbitmq.GenerateUserLoginEvent(uint(userInformation.ID), userInformation.Username)
 	_ = rabbitmq.RMQUserEvent.Publish(eventData)
 
 	return token, code.CodeSuccess

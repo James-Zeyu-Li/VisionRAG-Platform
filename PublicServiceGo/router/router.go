@@ -1,8 +1,6 @@
 package router
 
 import (
-	"VisionRAG/PublicServiceGo/gateway"
-	"os"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,13 +13,6 @@ func InitRouter() *gin.Engine {
 	{
 		RegisterUserRouter(enterRouter.Group("/user"))
 	}
-
-	// 注册网关转发路由，转发到 ChatServiceGo
-	chatServiceAddr := os.Getenv("CHAT_SERVICE_ADDR")
-	if chatServiceAddr == "" {
-		chatServiceAddr = "http://localhost:9092"
-	}
-	gateway.RegisterGatewayRoutes(r, chatServiceAddr)
 
 	return r
 }

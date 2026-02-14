@@ -95,24 +95,27 @@ func InitConfig() error {
 	}
 	// 1. 先加载文件配置
 	if _, err := toml.DecodeFile("config/config.toml", config); err != nil {
-		log.Fatal(err.Error())
-		return err
+		log.Printf("Warning: Could not decode config.toml: %v. Using defaults/env.", err)
 	}
 
 	// 2. 检查环境变量并覆盖 (用于 Docker 环境)
 	if envHost := os.Getenv("MYSQL_HOST"); envHost != "" {
 		config.MysqlConfig.MysqlHost = envHost
+		log.Printf("Config: MYSQL_HOST overridden to %s", envHost)
 	}
 	if envPort := os.Getenv("MYSQL_PORT"); envPort != "" {
 		if p, err := strconv.Atoi(envPort); err == nil {
 			config.MysqlConfig.MysqlPort = p
+			log.Printf("Config: MYSQL_PORT overridden to %d", p)
 		}
 	}
 	if envHost := os.Getenv("REDIS_HOST"); envHost != "" {
 		config.RedisConfig.RedisHost = envHost
+		log.Printf("Config: REDIS_HOST overridden to %s", envHost)
 	}
 	if envHost := os.Getenv("RABBITMQ_HOST"); envHost != "" {
 		config.Rabbitmq.RabbitmqHost = envHost
+		log.Printf("Config: RABBITMQ_HOST overridden to %s", envHost)
 	}
 
 	return nil

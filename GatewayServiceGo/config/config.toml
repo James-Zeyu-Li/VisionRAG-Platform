@@ -1,0 +1,11 @@
+[mainConfig]
+appName = "VisionRAG-Gateway"
+host = "0.0.0.0"
+port = 9000
+
+[services]
+publicServiceUrl = "http://public-service:9090"
+chatServiceUrl = "http://chat-service:9092"
+
+[jwtConfig]
+key = "SecretKeyChangeMe"

@@ -3,7 +3,7 @@ package file
 import (
 	"VisionRAG/ChatServiceGo/config"
 	"VisionRAG/ChatServiceGo/helper/rag"
-	"VisionRAG/ChatServiceGo/helper/utils"
+	"VisionRAG/ChatServiceGo/utils"
 	"context"
 	"io"
 	"log"

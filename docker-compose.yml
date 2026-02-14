@@ -39,25 +39,37 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  gateway-service:
+    build: 
+      context: ./GatewayServiceGo
+      dockerfile: Dockerfile
+    container_name: visionrag-gateway
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      - PUBLIC_SERVICE_URL=http://public-service:9090
+      - CHAT_SERVICE_URL=http://chat-service:9092
+    depends_on:
+      - public-service
+      - chat-service
+
   public-service:
     build: 
       context: ./PublicServiceGo
       dockerfile: Dockerfile
     container_name: visionrag-public
     restart: always
-    ports:
-      - "9090:9090"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_started
     environment:
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
-      - CHAT_SERVICE_ADDR=http://chat-service:9092
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   chat-service:
     build: 
@@ -65,20 +77,16 @@ services:
       dockerfile: Dockerfile
     container_name: visionrag-chat
     restart: always
-    ports:
-      - "9092:9092"
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
     depends_on:
       mysql:
         condition: service_healthy
       rabbitmq:
         condition: service_started
-      redis:
-        condition: service_started
-    environment:
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
-      - RABBITMQ_HOST=rabbitmq
-      - REDIS_HOST=redis
 
 volumes:
   mysql_data:

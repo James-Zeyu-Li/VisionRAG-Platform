@@ -13,7 +13,6 @@ type UserEvent struct {
 	UserID    uint      `json:"user_id"`
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
-	Token     string    `json:"token,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -29,11 +28,7 @@ func MQUserEvent(msg *amqp.Delivery) error {
 	case "USER_REGISTERED":
 		fmt.Printf(" [ChatService] New user joined! Welcome, %s (ID: %d)\n", event.Username, event.UserID)
 	case "USER_LOGIN":
-		if len(event.Token) > 10 {
-			fmt.Printf(" [ChatService MQ] Received login event. User: %s, Received JWT: %s...\n", event.Username, event.Token[:10])
-		} else {
-			fmt.Printf(" [ChatService MQ] Received login event. User: %s, Received JWT: %s\n", event.Username, event.Token)
-		}
+		fmt.Printf(" [ChatService MQ] Received login event. User: %s (ID: %d)\n", event.Username, event.UserID)
 	}
 
 	return nil
