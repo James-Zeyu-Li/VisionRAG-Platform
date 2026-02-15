@@ -26,13 +26,13 @@ type RedisConfig struct {
 	RedisPassword string `toml:"password"`
 }
 
-type MysqlConfig struct {
-	MysqlPort         int    `toml:"port"`
-	MysqlHost         string `toml:"host"`
-	MysqlUser         string `toml:"user"`
-	MysqlPassword     string `toml:"password"`
-	MysqlDatabaseName string `toml:"databaseName"`
-	MysqlCharset      string `toml:"charset"`
+type DBConfig struct {
+	DBPort         int    `toml:"port"`
+	DBHost         string `toml:"host"`
+	DBUser         string `toml:"user"`
+	DBPassword     string `toml:"password"`
+	DBDatabaseName string `toml:"databaseName"`
+	SSLMode        string `toml:"sslmode"`
 }
 
 type Rabbitmq struct {
@@ -46,7 +46,7 @@ type Rabbitmq struct {
 type Config struct {
 	EmailConfig  `toml:"emailConfig"`
 	RedisConfig  `toml:"redisConfig"`
-	MysqlConfig  `toml:"mysqlConfig"`
+	DBConfig     `toml:"databaseConfig"`
 	MainConfig   `toml:"mainConfig"`
 	Rabbitmq     `toml:"rabbitmqConfig"`
 	JwtConfig          `toml:"jwtConfig"`
@@ -99,16 +99,26 @@ func InitConfig() error {
 	}
 
 	// 2. 检查环境变量并覆盖 (用于 Docker 环境)
-	if envHost := os.Getenv("MYSQL_HOST"); envHost != "" {
-		config.MysqlConfig.MysqlHost = envHost
-		log.Printf("Config: MYSQL_HOST overridden to %s", envHost)
+	if envHost := os.Getenv("DB_HOST"); envHost != "" {
+		config.DBConfig.DBHost = envHost
+		log.Printf("Config: DB_HOST overridden to %s", envHost)
 	}
-	if envPort := os.Getenv("MYSQL_PORT"); envPort != "" {
+	if envPort := os.Getenv("DB_PORT"); envPort != "" {
 		if p, err := strconv.Atoi(envPort); err == nil {
-			config.MysqlConfig.MysqlPort = p
-			log.Printf("Config: MYSQL_PORT overridden to %d", p)
+			config.DBConfig.DBPort = p
+			log.Printf("Config: DB_PORT overridden to %d", p)
 		}
 	}
+	if envUser := os.Getenv("DB_USER"); envUser != "" {
+		config.DBConfig.DBUser = envUser
+	}
+	if envPass := os.Getenv("DB_PASSWORD"); envPass != "" {
+		config.DBConfig.DBPassword = envPass
+	}
+	if envName := os.Getenv("DB_NAME"); envName != "" {
+		config.DBConfig.DBDatabaseName = envName
+	}
+
 	if envHost := os.Getenv("REDIS_HOST"); envHost != "" {
 		config.RedisConfig.RedisHost = envHost
 		log.Printf("Config: REDIS_HOST overridden to %s", envHost)

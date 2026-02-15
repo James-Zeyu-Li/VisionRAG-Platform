@@ -1,7 +1,7 @@
 package user
 
 import (
-	"VisionRAG/PublicServiceGo/helper/mysql"
+	"VisionRAG/PublicServiceGo/helper/postgre"
 	"VisionRAG/PublicServiceGo/helper/utils"
 	"VisionRAG/PublicServiceGo/model"
 	"context"
@@ -17,7 +17,7 @@ const (
 var ctx = context.Background()
 
 func IsExistUser(username string) (bool, *model.User) {
-	user, err := mysql.GetUserByUsername(username)
+	user, err := postgre.GetUserByUsername(username)
 	if err == gorm.ErrRecordNotFound || user == nil {
 		return false, nil
 	}
@@ -25,7 +25,7 @@ func IsExistUser(username string) (bool, *model.User) {
 }
 
 func Register(username, email, password string) (*model.User, bool) {
-	if user, err := mysql.InsertUser(&model.User{
+	if user, err := postgre.InsertUser(&model.User{
 		Email:    email,
 		Name:     username,
 		Username: username,

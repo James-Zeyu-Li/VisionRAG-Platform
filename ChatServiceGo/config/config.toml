@@ -13,13 +13,13 @@ port = 6379
 password = ""
 db = 0
 
-[mysqlConfig]
+[databaseConfig]
 host = "127.0.0.1"
-port = 3307
-user = "root"
+port = 5432
+user = "postgres"
 password = "password"
 databaseName = "visionrag"
-charset = "utf8mb4"
+sslmode = "disable"
 
 [rabbitmqConfig]
 host = "127.0.0.1"

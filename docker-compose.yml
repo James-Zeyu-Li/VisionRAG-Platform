@@ -1,21 +1,23 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: visionrag-mysql
+  postgres:
+    image: postgres:16-alpine
+    container_name: visionrag-postgres
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: visionrag
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: visionrag
     ports:
-      - "3307:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:6.2-alpine
@@ -56,39 +58,45 @@ services:
 
   public-service:
     build: 
-      context: ./PublicServiceGo
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./PublicServiceGo/Dockerfile
     container_name: visionrag-public
     restart: always
     environment:
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=visionrag
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_started
 
   chat-service:
     build: 
-      context: ./ChatServiceGo
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./ChatServiceGo/Dockerfile
     container_name: visionrag-chat
     restart: always
     environment:
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=visionrag
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_started
 
 volumes:
-  mysql_data:
+  postgres_data:
   redis_data:
   rabbitmq_data:

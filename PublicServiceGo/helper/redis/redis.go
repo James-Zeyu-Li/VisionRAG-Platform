@@ -2,8 +2,8 @@ package redis
 
 import (
 	"VisionRAG/PublicServiceGo/config"
+	"VisionRAG/shared/cache"
 	"context"
-	"strconv"
 	"strings"
 	"time"
 
@@ -11,22 +11,20 @@ import (
 )
 
 var Rdb *redis.Client
-
 var ctx = context.Background()
 
 func Init() {
 	conf := config.GetConfig()
-	host := conf.RedisConfig.RedisHost
-	port := conf.RedisConfig.RedisPort
-	password := conf.RedisConfig.RedisPassword
-	db := conf.RedisDb
-	addr := host + ":" + strconv.Itoa(port)
-
-	Rdb = redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
+	rdb, err := cache.InitRedis(cache.RedisConfig{
+		Host:     conf.RedisConfig.RedisHost,
+		Port:     conf.RedisConfig.RedisPort,
+		Password: conf.RedisConfig.RedisPassword,
+		DB:       conf.RedisDb,
 	})
+	if err != nil {
+		panic("Redis init failed: " + err.Error())
+	}
+	Rdb = rdb
 }
 
 func SetCaptchaForEmail(email, captcha string) error {
@@ -37,7 +35,6 @@ func SetCaptchaForEmail(email, captcha string) error {
 
 func CheckCaptchaForEmail(email, userInput string) (bool, error) {
 	key := GenerateCaptcha(email)
-
 	storedCaptcha, err := Rdb.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
@@ -50,6 +47,5 @@ func CheckCaptchaForEmail(email, userInput string) (bool, error) {
 		_ = Rdb.Del(ctx, key).Err()
 		return true, nil
 	}
-
 	return false, nil
 }
