@@ -43,7 +43,7 @@ services:
 
   gateway-service:
     build: 
-      context: ./GatewayServiceGo
+      context: services/GatewayServiceGo
       dockerfile: Dockerfile
     container_name: visionrag-gateway
     restart: always
@@ -59,7 +59,7 @@ services:
   public-service:
     build: 
       context: .
-      dockerfile: ./PublicServiceGo/Dockerfile
+      dockerfile: services/PublicServiceGo/Dockerfile
     container_name: visionrag-public
     restart: always
     environment:
@@ -79,7 +79,7 @@ services:
   chat-service:
     build: 
       context: .
-      dockerfile: ./ChatServiceGo/Dockerfile
+      dockerfile: services/ChatServiceGo/Dockerfile
     container_name: visionrag-chat
     restart: always
     environment:

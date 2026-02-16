@@ -2,14 +2,13 @@ package queue
 
 import (
 	"fmt"
-	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type RabbitMQ struct {
-	conn    *amqp.Connection
-	channel *amqp.Channel
+	conn      *amqp.Connection
+	channel   *amqp.Channel
 	QueueName string
 	Exchange  string
 	Key       string
@@ -43,6 +42,22 @@ func NewRabbitMQ(conn *amqp.Connection, exchange, key, queue string) (*RabbitMQ,
 	}, nil
 }
 
+func (r *RabbitMQ) DeclareQueue() error {
+	_, err := r.channel.QueueDeclare(
+		r.QueueName,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	return err
+}
+
+func (r *RabbitMQ) GetChannel() *amqp.Channel {
+	return r.channel
+}
+
 func (r *RabbitMQ) Publish(message []byte) error {
 	return r.channel.Publish(
 		r.Exchange,
@@ -54,6 +69,28 @@ func (r *RabbitMQ) Publish(message []byte) error {
 			Body:        message,
 		},
 	)
+}
+
+func (r *RabbitMQ) Consume(handler func(msg *amqp.Delivery) error) error {
+	msgs, err := r.channel.Consume(
+		r.QueueName,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for d := range msgs {
+			handler(&d)
+		}
+	}()
+	return nil
 }
 
 func (r *RabbitMQ) Destroy() {
