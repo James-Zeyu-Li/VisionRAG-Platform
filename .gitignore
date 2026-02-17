@@ -53,7 +53,19 @@ Infra/redis_data/
 Infra/rabbitmq_data/
 
 # IDEs
+# IDEs
 .idea/
 .vscode/
+
+# Config files
+**/config/config.toml
+config.toml
+
+# Kubernetes Secrets and Environment files
+k8s/**/*-env.yaml
+k8s/**/secret.yaml
+charts/**/values-*.yaml
+.env
+*.env.local
 *.swp
 *.swo

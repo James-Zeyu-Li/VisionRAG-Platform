@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: public-service
+  labels:
+    {{- include "visionrag.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.microservices.public.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: public-service
+  template:
+    metadata:
+      labels:
+        app: public-service
+    spec:
+      containers:
+        - name: public-service
+          image: "{{ .Values.microservices.public.image }}:{{ .Values.microservices.public.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.microservices.public.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 9091
+          envFrom:
+            - configMapRef:
+                name: public-service-config
+            - secretRef:
+                name: public-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: public-service
+spec:
+  type: ClusterIP
+  selector:
+    app: public-service
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9091

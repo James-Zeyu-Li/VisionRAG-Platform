@@ -1,0 +1,43 @@
+{{- range $key, $val := .Values.microservices }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $val.name }}-config
+data:
+  # Database
+  DB_HOST: "postgres-service"
+  DB_PORT: {{ $.Values.infrastructure.postgres.port | quote }}
+  DB_NAME: {{ $.Values.global.dbName | quote }}
+  DB_TIMEZONE: {{ $.Values.global.timezone | quote }}
+  
+  # Redis
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: {{ $.Values.infrastructure.redis.port | quote }}
+  REDIS_DB: {{ $.Values.global.redisDb | quote }}
+  
+  # RabbitMQ
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_PORT: {{ $.Values.infrastructure.rabbitmq.port | quote }}
+  RABBITMQ_VHOST: "/"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $val.name }}-secret
+type: Opaque
+stringData:
+  # Database
+  DB_USER: {{ $.Values.global.dbUser | quote }}
+  DB_PASSWORD: {{ $.Values.global.dbPassword | quote }}
+  
+  # Redis
+  REDIS_PASSWORD: {{ $.Values.global.redisPassword | quote }}
+  
+  # RabbitMQ
+  RABBITMQ_USER: {{ $.Values.global.rabbitmqUser | quote }}
+  RABBITMQ_PASSWORD: {{ $.Values.global.rabbitmqPassword | quote }}
+  
+  # Auth
+  JWT_SECRET: {{ $.Values.global.jwtSecret | quote }}
+{{- end }}

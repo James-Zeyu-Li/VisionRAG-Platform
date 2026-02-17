@@ -1,0 +1,56 @@
+# 全局共享变量
+global:
+  # 数据库
+  dbUser: "postgres"
+  dbPassword: "password"
+  dbName: "visionrag"
+  timezone: "America/Vancouver"
+  
+  # Redis
+  redisPassword: ""
+  redisDb: 0
+  
+  # RabbitMQ
+  rabbitmqUser: "guest"
+  rabbitmqPassword: "guest"
+  
+  # 安全
+  jwtSecret: "SecretKeyChangeMe"
+
+# 中间件配置
+infrastructure:
+  postgres:
+    enabled: true
+    image: postgres:16-alpine
+    port: 5432
+  redis:
+    enabled: true
+    image: redis:6.2-alpine
+    port: 6379
+  rabbitmq:
+    enabled: true
+    image: rabbitmq:3-management-alpine
+    port: 5672
+    mgmtPort: 15672
+
+# 微服务配置
+microservices:
+  public:
+    name: public-service
+    image: visionrag-public
+    containerPort: 9091
+    servicePort: 9090
+    replicas: 2
+  chat:
+    name: chat-service
+    image: visionrag-chat
+    containerPort: 9092
+    servicePort: 9092
+    replicas: 1
+  gateway:
+    name: gateway-service
+    image: visionrag-gateway
+    containerPort: 9000
+    servicePort: 9000
+    nodePort: 30000
+    replicas: 1

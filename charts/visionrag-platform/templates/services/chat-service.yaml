@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service
+  labels:
+    {{- include "visionrag.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.microservices.chat.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: chat-service
+  template:
+    metadata:
+      labels:
+        app: chat-service
+    spec:
+      containers:
+        - name: chat-service
+          image: "{{ .Values.microservices.chat.image }}:{{ .Values.microservices.chat.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.microservices.chat.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 9092
+          volumeMounts:
+            - name: log-storage
+              mountPath: /var/log/chat
+          envFrom:
+            - configMapRef:
+                name: chat-service-config
+            - secretRef:
+                name: chat-service-secret
+        # --- Sidecar 示例：日志处理容器 ---
+        - name: log-collector
+          image: busybox:latest
+          command: ["sh", "-c", "tail -f /var/log/chat/app.log"]
+          volumeMounts:
+            - name: log-storage
+              mountPath: /var/log/chat
+      volumes:
+        - name: log-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+spec:
+  type: ClusterIP
+  selector:
+    app: chat-service
+  ports:
+    - protocol: TCP
+      port: 9092
+      targetPort: 9092

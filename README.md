@@ -52,3 +52,9 @@ docker-compose up -d --build
 - [ ] **Gateway**: Implement Reverse Proxy logic to forward `/session` requests to Chat Service.
 - [ ] **Chat**: Implement RabbitMQ Producer for chat messages.
 - [ ] **AI Worker**: Implement Python consumer for RAG tasks.
+
+## TODO
+1: Monitoring tool integration
+- Grafana
+- prometheus
+- Alertmanager

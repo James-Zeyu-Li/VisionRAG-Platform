@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  labels:
+    {{- include "visionrag.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.microservices.gateway.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+        - name: gateway-service
+          image: "{{ .Values.microservices.gateway.image }}:{{ .Values.microservices.gateway.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.microservices.gateway.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 9000
+          envFrom:
+            - configMapRef:
+                name: gateway-service-config
+            - secretRef:
+                name: gateway-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+spec:
+  type: NodePort
+  selector:
+    app: gateway-service
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000
+      nodePort: {{ .Values.microservices.gateway.nodePort | default 30000 }}
