@@ -12,23 +12,47 @@ spec:
     metadata:
       labels:
         app: rabbitmq
-    spec:
+    spec: #container information
       containers:
-      - name: rabbitmq
+      - name: rabbitmq #image 
         image: {{ .Values.infrastructure.rabbitmq.image }}
-        env:
-        - name: RABBITMQ_DEFAULT_USER
+        env: #image details
+        - name: RABBITMQ_DEFAULT_USER #username
           value: {{ .Values.global.rabbitmqUser | quote }}
-        - name: RABBITMQ_DEFAULT_PASS
+        - name: RABBITMQ_DEFAULT_PASS #Pass
           value: {{ .Values.global.rabbitmqPassword | quote }}
+        - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS #value for prometheus_port opening
+          value: "-rabbitmq_prometheus prometheus_port 15692"
         ports:
         - containerPort: 5672
         - containerPort: 15672
+        - containerPort: 15692
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          tcpSocket:
+            port: 5672
+          initialDelaySeconds: 60
+          periodSeconds: 15
+        readinessProbe:
+          tcpSocket:
+            port: 5672
+          initialDelaySeconds: 20
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: rabbitmq-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "15692"
+    prometheus.io/path: "/metrics"
 spec:
   selector:
     app: rabbitmq
@@ -41,5 +65,9 @@ spec:
       protocol: TCP
       port: 15672
       targetPort: 15672
+    - name: prometheus
+      protocol: TCP
+      port: 15692
+      targetPort: 15692
   type: ClusterIP
 {{- end }}

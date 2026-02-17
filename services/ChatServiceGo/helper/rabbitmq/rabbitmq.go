@@ -33,18 +33,18 @@ func NewWorkRabbitMQ(queueName string) *RabbitMQ {
 	if conn == nil {
 		initConn()
 	}
-	
+
 	baseMQ, err := queue.NewRabbitMQ(conn, "", queueName, queueName)
 	if err != nil {
 		panic("Failed to create RabbitMQ channel: " + err.Error())
 	}
-	
+
 	// 声明队列
 	err = baseMQ.DeclareQueue()
 	if err != nil {
 		panic("Failed to declare RabbitMQ queue: " + err.Error())
 	}
-	
+
 	return &RabbitMQ{baseMQ}
 }
 

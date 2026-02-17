@@ -58,7 +58,7 @@ func Auth() gin.HandlerFunc {
 		// 2. 将用户信息存入 Gin Context，供后续 Proxy 逻辑注入 Header
 		c.Set("userName", claims.Username)
 		c.Set("userID", fmt.Sprintf("%d", claims.UserID))
-		
+
 		log.Printf("[Gateway Auth] Success! User: %s, RequestID: %s", claims.Username, requestID)
 		c.Next()
 	}

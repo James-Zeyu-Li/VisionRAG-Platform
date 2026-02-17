@@ -15,34 +15,50 @@ spec:
         app: chat-service
     spec:
       containers:
-        - name: chat-service
-          image: "{{ .Values.microservices.chat.image }}:{{ .Values.microservices.chat.tag | default "latest" }}"
-          imagePullPolicy: {{ .Values.microservices.chat.pullPolicy | default "IfNotPresent" }}
-          ports:
-            - containerPort: 9092
-          volumeMounts:
-            - name: log-storage
-              mountPath: /var/log/chat
-          envFrom:
-            - configMapRef:
-                name: chat-service-config
-            - secretRef:
-                name: chat-service-secret
-        # --- Sidecar 示例：日志处理容器 ---
-        - name: log-collector
-          image: busybox:latest
-          command: ["sh", "-c", "tail -f /var/log/chat/app.log"]
-          volumeMounts:
-            - name: log-storage
-              mountPath: /var/log/chat
-      volumes:
+      - name: chat-service
+        image: "{{ .Values.microservices.chat.image }}:{{ .Values.microservices.chat.tag | default "latest" }}"
+        imagePullPolicy: {{ .Values.microservices.chat.pullPolicy | default "IfNotPresent" }}
+        ports:
+        - containerPort: 9092
+        volumeMounts:
         - name: log-storage
-          emptyDir: {}
+          mountPath: /var/log/chat
+        envFrom:
+        - configMapRef:
+            name: chat-service-config
+        - secretRef:
+            name: chat-service-secret
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9092
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9092
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      # --- Sidecar 示例：日志处理容器 ---
+      - name: log-collector
+        image: busybox:latest
+        command: ["sh", "-c", "until [ -f /var/log/chat/app.log ]; do sleep 1; done; tail -f /var/log/chat/app.log"]
+        volumeMounts:
+        - name: log-storage
+          mountPath: /var/log/chat
+      volumes:
+      - name: log-storage
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: chat-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9092"
+    prometheus.io/path: "/metrics"
 spec:
   type: ClusterIP
   selector:

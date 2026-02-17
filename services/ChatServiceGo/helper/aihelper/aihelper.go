@@ -4,8 +4,10 @@ import (
 	"VisionRAG/ChatServiceGo/helper/rabbitmq"
 	"VisionRAG/ChatServiceGo/model"
 	"VisionRAG/ChatServiceGo/utils"
+	"VisionRAG/shared/monitor"
 	"context"
 	"sync"
+	"time"
 )
 
 // AIHelper AI助手结构体，包含消息历史和AI模型
@@ -64,6 +66,8 @@ func (a *AIHelper) GetMessages() []*model.Message {
 
 // 同步生成
 func (a *AIHelper) GenerateResponse(userName string, ctx context.Context, userQuestion string) (*model.Message, error) {
+	start := time.Now()
+	modelType := a.model.GetModelType()
 
 	//调用存储函数
 	a.AddMessage(userQuestion, userName, true, true)
@@ -79,6 +83,9 @@ func (a *AIHelper) GenerateResponse(userName string, ctx context.Context, userQu
 		return nil, err
 	}
 
+	// 记录监控数据
+	monitor.AIInferenceDuration.WithLabelValues(modelType, "sync").Observe(time.Since(start).Seconds())
+
 	//将schema.Message转化成model.Message
 	modelMsg := utils.ConvertToModelMessage(a.SessionID, userName, schemaMsg)
 
@@ -90,6 +97,8 @@ func (a *AIHelper) GenerateResponse(userName string, ctx context.Context, userQu
 
 // 流式生成
 func (a *AIHelper) StreamResponse(userName string, ctx context.Context, cb StreamCallback, userQuestion string) (*model.Message, error) {
+	start := time.Now()
+	modelType := a.model.GetModelType()
 
 	//调用存储函数
 	a.AddMessage(userQuestion, userName, true, true)
@@ -102,6 +111,10 @@ func (a *AIHelper) StreamResponse(userName string, ctx context.Context, cb Strea
 	if err != nil {
 		return nil, err
 	}
+
+	// 记录监控数据
+	monitor.AIInferenceDuration.WithLabelValues(modelType, "stream").Observe(time.Since(start).Seconds())
+
 	//转化成model.Message
 	modelMsg := &model.Message{
 		SessionID: a.SessionID,

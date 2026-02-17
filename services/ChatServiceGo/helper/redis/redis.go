@@ -48,7 +48,7 @@ func InitRedisIndex(ctx context.Context, filename string, dimension int) error {
 		return nil
 	}
 
-	// FT.CREATE idx:rag:filename ON HASH PREFIX 1 rag:filename: 
+	// FT.CREATE idx:rag:filename ON HASH PREFIX 1 rag:filename:
 	// SCHEMA vector VECTOR HNSW 6 TYPE FLOAT32 DIM dimension DISTANCE COSINE content TEXT
 	args := []interface{}{
 		"FT.CREATE", indexName,

@@ -23,7 +23,7 @@ type MQConfig struct {
 }
 
 func NewConnection(cfg MQConfig) (*amqp.Connection, error) {
-	url := fmt.Sprintf("amqp://%s:%s@%s:%d/%s", 
+	url := fmt.Sprintf("amqp://%s:%s@%s:%d/%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.VHost)
 	return amqp.Dial(url)
 }

@@ -5,15 +5,15 @@ global:
   dbPassword: "YOUR_DB_PASSWORD"
   dbName: "visionrag"
   timezone: "America/Vancouver"
-  
+
   # Redis
   redisPassword: "YOUR_REDIS_PASSWORD"
   redisDb: 0
-  
+
   # RabbitMQ
   rabbitmqUser: "guest"
   rabbitmqPassword: "YOUR_RMQ_PASSWORD"
-  
+
   # 安全
   jwtSecret: "YOUR_JWT_SECRET_KEY"
 

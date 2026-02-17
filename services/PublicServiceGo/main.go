@@ -20,7 +20,7 @@ func main() {
 	if err := config.InitConfig(); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-	
+
 	conf := config.GetConfig()
 	log.Printf("Connecting to DB at %s:%d as user %s", conf.DBConfig.DBHost, conf.DBConfig.DBPort, conf.DBConfig.DBUser)
 

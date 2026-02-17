@@ -47,7 +47,7 @@ func ProxyHandler(target string) gin.HandlerFunc {
 		}
 
 		log.Printf("[Gateway Proxy] Forwarding %s %s to %s", c.Request.Method, c.Request.URL.Path, target)
-		
+
 		// 2. 执行转发
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}

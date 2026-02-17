@@ -15,7 +15,6 @@ func MD5(str string) string {
 	return fmt.Sprintf("%x", has)
 }
 
-
 func GetRandomNumbers(num int) string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 

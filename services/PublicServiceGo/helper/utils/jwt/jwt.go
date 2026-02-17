@@ -17,7 +17,7 @@ type MyClaims struct {
 // GenerateToken 生成 JWT Token
 func GenerateToken(userID uint, username string) (string, error) {
 	conf := config.GetConfig().JwtConfig
-	
+
 	claims := MyClaims{
 		UserID:   userID,
 		Username: username,

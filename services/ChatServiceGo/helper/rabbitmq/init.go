@@ -1,7 +1,7 @@
 package rabbitmq
 
 var (
-	RMQMessage *RabbitMQ
+	RMQMessage   *RabbitMQ
 	RMQUserEvent *RabbitMQ
 )
 

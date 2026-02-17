@@ -1,5 +1,6 @@
 # 使用官方 Golang 镜像作为构建环境
 FROM golang:1.24-alpine AS builder
+ENV GOTOOLCHAIN=auto
 
 # 设置工作目录
 WORKDIR /app

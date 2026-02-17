@@ -17,7 +17,7 @@ type UploadResponse struct {
 
 func UploadRagFile(c *gin.Context) {
 	res := new(UploadResponse)
-	
+
 	// 从 header 或 query 获取用户名，配合 Auth 中间件
 	username := c.GetString("username")
 	if username == "" {

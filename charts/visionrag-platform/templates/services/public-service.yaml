@@ -15,21 +15,25 @@ spec:
         app: public-service
     spec:
       containers:
-        - name: public-service
-          image: "{{ .Values.microservices.public.image }}:{{ .Values.microservices.public.tag | default "latest" }}"
-          imagePullPolicy: {{ .Values.microservices.public.pullPolicy | default "IfNotPresent" }}
-          ports:
-            - containerPort: 9091
-          envFrom:
-            - configMapRef:
-                name: public-service-config
-            - secretRef:
-                name: public-service-secret
+      - name: public-service
+        image: "{{ .Values.microservices.public.image }}:{{ .Values.microservices.public.tag | default "latest" }}"
+        imagePullPolicy: {{ .Values.microservices.public.pullPolicy | default "IfNotPresent" }}
+        ports:
+        - containerPort: 9091
+        envFrom:
+        - configMapRef:
+            name: public-service-config
+        - secretRef:
+            name: public-service-secret
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: public-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9091"
+    prometheus.io/path: "/metrics"
 spec:
   type: ClusterIP
   selector:

@@ -4,12 +4,27 @@ import (
 	"VisionRAG/GatewayServiceGo/config"
 	"VisionRAG/GatewayServiceGo/middleware"
 	"VisionRAG/GatewayServiceGo/proxy"
+	"VisionRAG/shared/monitor"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func InitRouter() *gin.Engine {
-	r := gin.Default()
+	r := gin.New()        // Empty Gin Engine
+	r.Use(gin.Recovery()) // capture panic
+
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// health check
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "UP", "service": "Gateway"})
+	})
+
+	// Prometheus producer
+	r.Use(monitor.PrometheusMiddleware())
+	r.Use(gin.Logger())
+
 	cfg := config.GetConfig()
 
 	v1 := r.Group("/api/v1")
@@ -31,11 +46,6 @@ func InitRouter() *gin.Engine {
 			authGroup.Any("/file/*any", proxy.ProxyHandler(cfg.ServicesConfig.ChatServiceUrl))
 		}
 	}
-
-	// health check
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "UP", "service": "Gateway"})
-	})
 
 	return r
 }

@@ -22,21 +22,21 @@ const (
 	CtxRequestID = "requestID"
 )
 
-var(
+var (
 	ErrMissingUserID    = errors.New("missing x-user-id")
 	ErrInvalidUserID    = errors.New("invalid x-user-id")
 	ErrMissingUserName  = errors.New("missing x-user-name")
 	ErrMissingRequestID = errors.New("missing x-request-id")
 )
 
-func ReadUserIDFromHeader(c *gin.Context)(int64, error){
+func ReadUserIDFromHeader(c *gin.Context) (int64, error) {
 	raw := strings.TrimSpace(c.GetHeader(HeaderUserID))
-	if raw == ""{
+	if raw == "" {
 		return 0, ErrMissingUserID
 	}
 
 	id, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil || id <= 0{
+	if err != nil || id <= 0 {
 		return 0, ErrInvalidUserID
 	}
 	return id, nil
@@ -127,6 +127,6 @@ func Auth() gin.HandlerFunc {
 		c.Header(HeaderRequestID, requestID)
 
 		c.Next()
-	
+
 	}
 }
