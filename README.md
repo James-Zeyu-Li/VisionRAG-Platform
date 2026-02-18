@@ -69,6 +69,26 @@ Default env source file:
 
 * `.secrets/visionrag.env`
 
+## Local Smoke Test CLI
+
+Run one command to validate:
+
+* Kubernetes service port-forward (gateway/public/chat)
+* App health and metrics (`/health`, `/metrics`)
+* Internal dependency health (Redis, RabbitMQ, PostgreSQL)
+* End-to-end auth and chat/session flow (captcha -> register -> login -> session/chat)
+
+```bash
+python3 manage.py smoke-test
+```
+
+Direct script usage (optional):
+
+```bash
+python3 scripts/local_smoke_cli.py --namespace default
+python3 scripts/local_smoke_cli.py --namespace default --with-ai --model-type 4
+```
+
 ## Local Ollama Model (Optional for Local Dev)
 
 For local model testing, run:
