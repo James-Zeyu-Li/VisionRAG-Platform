@@ -4,6 +4,7 @@ Thumbs.db
 
 # Go
 CoreServiceGo/server
+services/*/server
 CoreServiceGo/*.exe
 CoreServiceGo/*.test
 CoreServiceGo/vendor/
@@ -37,6 +38,7 @@ dist/
 
 # Node.js / React (WebReact)
 WebReact/node_modules/
+vue-frontend/node_modules/
 WebReact/build/
 WebReact/dist/
 WebReact/.env.local

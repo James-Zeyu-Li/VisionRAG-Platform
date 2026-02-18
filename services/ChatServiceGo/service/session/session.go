@@ -9,11 +9,33 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/google/uuid"
 )
 
 var ctx = context.Background()
+
+func buildModelConfig(userName, modelType string) map[string]interface{} {
+	config := map[string]interface{}{
+		"username": userName,
+	}
+
+	if modelType == "4" {
+		baseURL := os.Getenv("OLLAMA_BASE_URL")
+		if baseURL == "" {
+			baseURL = "http://127.0.0.1:11434"
+		}
+		modelName := os.Getenv("OLLAMA_MODEL_NAME")
+		if modelName == "" {
+			modelName = "qwen2.5:7b"
+		}
+		config["baseURL"] = baseURL
+		config["modelName"] = modelName
+	}
+
+	return config
+}
 
 func GetUserSessionsByUserName(userName string) ([]model.SessionInfo, error) {
 	sessions, err := session.GetSessionsByUserName(userName)
@@ -91,9 +113,7 @@ func CreateSessionAndSendMessage(userName string, userQuestion string, modelType
 	}
 
 	manager := aihelper.GetGlobalManager()
-	config := map[string]interface{}{
-		"username": userName,
-	}
+	config := buildModelConfig(userName, modelType)
 	helper, err := manager.GetOrCreateAIHelper(userName, createdSession.ID, modelType, config)
 	if err != nil {
 		log.Println("CreateSessionAndSendMessage GetOrCreateAIHelper error:", err)
@@ -131,9 +151,7 @@ func StreamMessageToExistingSession(userName string, sessionID string, userQuest
 	}
 
 	manager := aihelper.GetGlobalManager()
-	config := map[string]interface{}{
-		"username": userName,
-	}
+	config := buildModelConfig(userName, modelType)
 	helper, err := manager.GetOrCreateAIHelper(userName, sessionID, modelType, config)
 	if err != nil {
 		log.Println("StreamMessageToExistingSession GetOrCreateAIHelper error:", err)
@@ -168,9 +186,7 @@ func StreamMessageToExistingSession(userName string, sessionID string, userQuest
 
 func ChatSend(userName string, sessionID string, userQuestion string, modelType string) (string, code.Code) {
 	manager := aihelper.GetGlobalManager()
-	config := map[string]interface{}{
-		"username": userName,
-	}
+	config := buildModelConfig(userName, modelType)
 	helper, err := manager.GetOrCreateAIHelper(userName, sessionID, modelType, config)
 	if err != nil {
 		log.Println("ChatSend GetOrCreateAIHelper error:", err)
