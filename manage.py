@@ -10,6 +10,11 @@ Available Actions:
   build  - Build Docker images for all Go services
   deploy - Lint Helm charts and deploy/upgrade the platform to K8s
   up     - Complete workflow: build -> lint -> deploy
+  ollama - Ensure local Ollama docker is running and model is ready
+  start_all - One-click local K8s flow: start Ollama -> apply secret -> deploy Helm
+  obs-ui-start - Start Prometheus/Grafana local port-forward in background
+  obs-ui-stop  - Stop Prometheus/Grafana local port-forward
+  obs-ui-status - Show Prometheus/Grafana port-forward status
   clean  - Uninstall the Helm release from the cluster
   status - Show status of pods, services, and core infrastructure
   fmt    - Format Go code, Helm charts, and Python scripts
@@ -95,12 +100,49 @@ def tidy():
     run_command("cd shared && go mod tidy", "Tidying shared module")
 
 
+def ensure_ollama():
+    print(f"{YELLOW}--- Ensuring local Ollama ---{RESET}")
+    run_command("scripts/ensure-ollama.sh",
+                "Starting/checking Ollama container")
+
+
+def start_all():
+    print(f"{YELLOW}--- K8s one-click up ---{RESET}")
+    ensure_ollama()
+    run_command("scripts/apply-k8s-secret.sh --deploy",
+                "Applying secret and deploying Helm")
+    run_command("kubectl -n default rollout restart deploy/chat-service",
+                "Restarting chat-service rollout")
+    run_command("kubectl -n default rollout status deploy/chat-service --timeout=180s",
+                "Waiting for chat-service to become Ready")
+    obs_ui_start()
+    print(f"\n{GREEN}Observability UIs are ready:{RESET}")
+    print(f"Prometheus: {BLUE}http://127.0.0.1:9090/targets{RESET}")
+    print(f"Grafana:    {BLUE}http://127.0.0.1:3000{RESET}")
+
+
+def obs_ui_start():
+    run_command("scripts/observability-ui.sh start",
+                "Starting observability UIs")
+
+
+def obs_ui_stop():
+    run_command("scripts/observability-ui.sh stop",
+                "Stopping observability UIs")
+
+
+def obs_ui_status():
+    run_command("scripts/observability-ui.sh status",
+                "Checking observability UI status")
+
+
 def main():
     parser = argparse.ArgumentParser(description="VisionRAG Platform Manager")
     parser.add_argument(
         "action",
-        choices=["build", "deploy", "up", "clean",
-                 "status", "fmt", "lint", "tidy"],
+        choices=["build", "deploy", "up", "ollama", "start_all",
+                 "obs-ui-start", "obs-ui-stop", "obs-ui-status",
+                 "clean", "status", "fmt", "lint", "tidy"],
         help="Action to perform",
     )
 
@@ -121,6 +163,16 @@ def main():
         build()
         lint()
         deploy()
+    elif args.action == "ollama":
+        ensure_ollama()
+    elif args.action == "start_all":
+        start_all()
+    elif args.action == "obs-ui-start":
+        obs_ui_start()
+    elif args.action == "obs-ui-stop":
+        obs_ui_stop()
+    elif args.action == "obs-ui-status":
+        obs_ui_status()
     elif args.action == "clean":
         clean()
     elif args.action == "status":

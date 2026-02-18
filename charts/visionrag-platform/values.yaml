@@ -39,3 +39,11 @@ microservices:
     image: visionrag-gateway
     tag: latest
     replicas: 1
+
+observability:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: kube-prometheus-stack

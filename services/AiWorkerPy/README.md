@@ -8,7 +8,7 @@ This is a minimal local worker for testing model connectivity against Ollama.
 - A model has been pulled, for example:
 
 ```bash
-ollama pull qwen2.5:7b
+ollama pull qwen2.5:1.5b
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ python3 services/AiWorkerPy/ollama_local_worker.py "Summarize VisionRAG architec
 Optional env vars:
 
 - `OLLAMA_BASE_URL` (default: `http://127.0.0.1:11434`)
-- `OLLAMA_MODEL_NAME` (or `OLLAMA_MODEL`, default: `qwen2.5:7b`)
+- `OLLAMA_MODEL_NAME` (or `OLLAMA_MODEL`, default: `qwen2.5:1.5b`)
 - `OLLAMA_TIMEOUT_SECONDS` (default: `120`)
 
 Example:

@@ -44,3 +44,11 @@ microservices:
     servicePort: 9000
     nodePort: 30000
     replicas: 1
+
+observability:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: kube-prometheus-stack

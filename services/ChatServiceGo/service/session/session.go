@@ -28,7 +28,7 @@ func buildModelConfig(userName, modelType string) map[string]interface{} {
 		}
 		modelName := os.Getenv("OLLAMA_MODEL_NAME")
 		if modelName == "" {
-			modelName = "qwen2.5:7b"
+			modelName = "qwen2.5:1.5b"
 		}
 		config["baseURL"] = baseURL
 		config["modelName"] = modelName

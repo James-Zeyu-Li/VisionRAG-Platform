@@ -80,7 +80,7 @@ python3 services/AiWorkerPy/ollama_local_worker.py "hello"
 Environment variables:
 
 * `OLLAMA_BASE_URL` (default: `http://127.0.0.1:11434`)
-* `OLLAMA_MODEL_NAME` (default: `qwen2.5:7b`)
+* `OLLAMA_MODEL_NAME` (default: `qwen2.5:1.5b`)
 
 In Chat service, set request `modelType` to `"4"` to use Ollama.
 

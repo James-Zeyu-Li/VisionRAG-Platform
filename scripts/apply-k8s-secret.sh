@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NAMESPACE="${NAMESPACE:-visionrag}"
+NAMESPACE="${NAMESPACE:-default}"
 SECRET_NAME="${SECRET_NAME:-visionrag-platform-secrets}"
 ENV_FILE="${ENV_FILE:-.secrets/visionrag.env}"
 RELEASE_NAME="${RELEASE_NAME:-visionrag}"
