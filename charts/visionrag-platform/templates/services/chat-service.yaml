@@ -27,7 +27,7 @@ spec:
         - configMapRef:
             name: chat-service-config
         - secretRef:
-            name: chat-service-secret
+            name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
         livenessProbe:
           httpGet:
             path: /health

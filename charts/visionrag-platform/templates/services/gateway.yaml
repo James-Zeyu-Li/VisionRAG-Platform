@@ -24,7 +24,7 @@ spec:
         - configMapRef:
             name: gateway-service-config
         - secretRef:
-            name: gateway-service-secret
+            name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
 ---
 apiVersion: v1
 kind: Service

@@ -20,9 +20,15 @@ spec:
             - name: POSTGRES_DB
               value: {{ .Values.global.dbName | quote }}
             - name: POSTGRES_USER
-              value: {{ .Values.global.dbUser | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+                  key: DB_USER
             - name: POSTGRES_PASSWORD
-              value: {{ .Values.global.dbPassword | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+                  key: DB_PASSWORD
           ports:
             - containerPort: 5432
           resources:
@@ -35,12 +41,18 @@ spec:
           # 存活与就绪检查：使用 pg_isready
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "{{ .Values.global.dbUser }}", "-d", "{{ .Values.global.dbName }}"]
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "{{ .Values.global.dbName }}"
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "{{ .Values.global.dbUser }}", "-d", "{{ .Values.global.dbName }}"]
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "{{ .Values.global.dbName }}"
             initialDelaySeconds: 5
             periodSeconds: 10
         # --- 新增：PostgreSQL 监控翻译官 (Sidecar) ---
@@ -49,8 +61,20 @@ spec:
           ports:
             - containerPort: 9187
           env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              value: {{ .Values.global.dbName | quote }}
             - name: DATA_SOURCE_NAME
-              value: "postgresql://{{ .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@localhost:5432/{{ .Values.global.dbName }}?sslmode=disable"
+              value: "postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:5432/$(DB_NAME)?sslmode=disable"
           resources:
             requests:
               cpu: "50m"

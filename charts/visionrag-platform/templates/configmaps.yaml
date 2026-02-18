@@ -20,24 +20,4 @@ data:
   RABBITMQ_HOST: "rabbitmq-service"
   RABBITMQ_PORT: {{ $.Values.infrastructure.rabbitmq.port | quote }}
   RABBITMQ_VHOST: "/"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ $val.name }}-secret
-type: Opaque
-stringData:
-  # Database
-  DB_USER: {{ $.Values.global.dbUser | quote }}
-  DB_PASSWORD: {{ $.Values.global.dbPassword | quote }}
-  
-  # Redis
-  REDIS_PASSWORD: {{ $.Values.global.redisPassword | quote }}
-  
-  # RabbitMQ
-  RABBITMQ_USER: {{ $.Values.global.rabbitmqUser | quote }}
-  RABBITMQ_PASSWORD: {{ $.Values.global.rabbitmqPassword | quote }}
-  
-  # Auth
-  JWT_SECRET: {{ $.Values.global.jwtSecret | quote }}
 {{- end }}

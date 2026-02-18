@@ -67,5 +67,6 @@ k8s/**/secret.yaml
 charts/**/values-*.yaml
 .env
 *.env.local
+.secrets/*.env
 *.swp
 *.swo

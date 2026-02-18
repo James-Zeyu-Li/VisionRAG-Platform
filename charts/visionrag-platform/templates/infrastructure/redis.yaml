@@ -16,12 +16,15 @@ spec:
       containers:
       - name: redis
         image: {{ .Values.infrastructure.redis.image }}
-        command: ["redis-server"]
-        args: [
-          "--appendonly", "yes",
-          "--appendfsync", "everysec",
-          "--requirepass", "{{ .Values.global.redisPassword }}"
-        ]
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+              key: REDIS_PASSWORD
+        command: ["sh", "-c"]
+        args:
+        - redis-server --appendonly yes --appendfsync everysec --requirepass "$REDIS_PASSWORD"
         ports:
         - containerPort: 6379
         resources:
@@ -34,19 +37,17 @@ spec:
         livenessProbe:
           exec:
             command:
-            - redis-cli
-            - -a
-            - {{ .Values.global.redisPassword | quote }}
-            - ping
+            - sh
+            - -c
+            - redis-cli -a "$REDIS_PASSWORD" ping
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           exec:
             command:
-            - redis-cli
-            - -a
-            - {{ .Values.global.redisPassword | quote }}
-            - ping
+            - sh
+            - -c
+            - redis-cli -a "$REDIS_PASSWORD" ping
           initialDelaySeconds: 5
           periodSeconds: 10
       # --- 监控翻译官 (Sidecar) ---
@@ -58,7 +59,10 @@ spec:
         - name: REDIS_ADDR
           value: "redis://localhost:6379"
         - name: REDIS_PASSWORD
-          value: "{{ .Values.global.redisPassword }}"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+              key: REDIS_PASSWORD
         resources:
           requests:
             cpu: "50m"

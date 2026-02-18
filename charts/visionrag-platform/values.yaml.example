@@ -1,21 +1,11 @@
 # 全局共享变量
 global:
-  # 数据库
-  dbUser: "postgres"
-  dbPassword: "password"
+  # 数据库（非敏感）
   dbName: "visionrag"
   timezone: "America/Vancouver"
-  
-  # Redis
-  redisPassword: ""
   redisDb: 0
-  
-  # RabbitMQ
-  rabbitmqUser: "guest"
-  rabbitmqPassword: "guest"
-  
-  # 安全
-  jwtSecret: "SecretKeyChangeMe"
+  # 所有服务统一引用的外部 Secret 名称（需提前 kubectl create/apply）
+  existingSecretName: "visionrag-platform-secrets"
 
 # 中间件配置
 infrastructure:

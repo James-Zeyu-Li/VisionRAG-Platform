@@ -18,9 +18,15 @@ spec:
         image: {{ .Values.infrastructure.rabbitmq.image }}
         env: #image details
         - name: RABBITMQ_DEFAULT_USER #username
-          value: {{ .Values.global.rabbitmqUser | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+              key: RABBITMQ_USER
         - name: RABBITMQ_DEFAULT_PASS #Pass
-          value: {{ .Values.global.rabbitmqPassword | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+              key: RABBITMQ_PASSWORD
         - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS #value for prometheus_port opening
           value: "-rabbitmq_prometheus prometheus_port 15692"
         ports:
