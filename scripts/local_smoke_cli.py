@@ -179,14 +179,14 @@ def infra_health_checks(namespace):
     if "PONG" not in redis_ping:
         raise RuntimeError(f"redis ping failed: {redis_ping}")
 
-    rabbit_ping = kubectl_exec(
+    rabbit_metrics = kubectl_exec(
         namespace,
         "deploy/rabbitmq",
         None,
-        "rabbitmq-diagnostics -q ping",
+        "wget -qO- http://127.0.0.1:15692/metrics | head -n 20",
     )
-    if "ok" not in rabbit_ping.lower():
-        raise RuntimeError(f"rabbitmq ping failed: {rabbit_ping}")
+    if "# TYPE " not in rabbit_metrics and "# HELP " not in rabbit_metrics:
+        raise RuntimeError(f"rabbitmq metrics check failed: {rabbit_metrics}")
 
     pg_ready = kubectl_exec(
         namespace,

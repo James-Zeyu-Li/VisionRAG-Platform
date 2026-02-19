@@ -111,6 +111,28 @@ Current state:
 * Services expose `/metrics`.
 * K8s services include `prometheus.io/scrape` annotations.
 * Redis/Postgres/RabbitMQ metrics endpoints are enabled in chart templates.
+* A prebuilt Grafana dashboard (`VisionRAG Overview`) is provisioned by Helm via ConfigMap in `monitoring` namespace.
+* Helm-managed Prometheus alert rules are enabled via `PrometheusRule` (`visionrag-platform-alert-rules`).
+
+### Alert Rules (Helm)
+
+Default rule groups:
+
+* Availability: service target down, infra target down, deployment unavailable.
+* Stability: crash loop, restart burst, OOMKilled.
+* Capacity: chat CPU high, app pod memory high.
+* Middleware: Redis down, Postgres down, RabbitMQ queue backlog high and critical.
+
+Tune thresholds in:
+
+* `charts/visionrag-platform/values.yaml` -> `observability.prometheusRule.thresholds`
+
+Quick checks:
+
+```bash
+kubectl -n default get prometheusrule
+kubectl -n default get prometheusrule visionrag-platform-alert-rules -o yaml
+```
 
 Recommended next steps:
 

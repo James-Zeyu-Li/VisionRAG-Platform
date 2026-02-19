@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: visionrag-platform-alert-rules
+  namespace: default
+  labels:
+    app.kubernetes.io/name: visionrag-platform
+    role: alert-rules
+spec:
+  groups:
+    - name: visionrag-platform.availability
+      rules:
+        - alert: VisionRAGServiceDown
+          expr: up{namespace="default",job=~"gateway-service|chat-service|public-service"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "VisionRAG service target is down"
+            description: "Prometheus scrape for {{$labels.job}} on {{$labels.instance}} has been failing for more than 2 minutes."
+
+        - alert: VisionRAGInfraMetricsDown
+          expr: up{namespace="default",job=~"redis-service|postgres-service|rabbitmq-service"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Infrastructure metrics target is down"
+            description: "Scrape target {{$labels.job}} on {{$labels.instance}} has been unavailable for more than 5 minutes."
+
+    - name: visionrag-platform.stability
+      rules:
+        - alert: VisionRAGPodRestartSpike
+          expr: increase(kube_pod_container_status_restarts_total{namespace="default",pod=~"gateway-service-.*|chat-service-.*|public-service-.*"}[10m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "VisionRAG pod restarted recently"
+            description: "Pod {{$labels.pod}} has restarted within the last 10 minutes."
+
+        - alert: VisionRAGRabbitMQQueueBacklogHigh
+          expr: sum(rabbitmq_queue_messages{namespace="default"}) > 100
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "RabbitMQ backlog is high"
+            description: "Total RabbitMQ queue messages exceeded 100 for more than 10 minutes."

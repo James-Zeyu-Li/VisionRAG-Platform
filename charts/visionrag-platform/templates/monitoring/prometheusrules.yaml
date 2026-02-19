@@ -1,0 +1,151 @@
+{{- $obs := .Values.observability | default dict -}}
+{{- $pr := get $obs "prometheusRule" | default dict -}}
+{{- $prEnabled := get $pr "enabled" | default false -}}
+{{- $prLabels := get $pr "labels" | default dict -}}
+{{- $thresholds := get $pr "thresholds" | default dict -}}
+{{- $chatCpuCoresWarning := get $thresholds "chatCpuCoresWarning" | default 0.75 -}}
+{{- $appPodMemoryMiBWarning := get $thresholds "appPodMemoryMiBWarning" | default 600 -}}
+{{- $queueMessagesWarning := get $thresholds "queueMessagesWarning" | default 100 -}}
+{{- $queueMessagesCritical := get $thresholds "queueMessagesCritical" | default 1000 -}}
+{{- if $prEnabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: visionrag-platform-alert-rules
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "visionrag.labels" . | nindent 4 }}
+    role: alert-rules
+    {{- with $prLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: visionrag-platform.availability
+      rules:
+        - alert: VisionRAGServiceTargetDown
+          expr: up{namespace="{{ .Release.Namespace }}",job=~"gateway-service|chat-service|public-service"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "VisionRAG application target down"
+            description: "One of gateway chat public service scrape targets is down for at least 2 minutes."
+
+        - alert: VisionRAGInfraTargetDown
+          expr: up{namespace="{{ .Release.Namespace }}",job=~"redis-service|postgres-service|rabbitmq-service"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "VisionRAG infrastructure target down"
+            description: "A Redis Postgres or RabbitMQ metrics target has been unavailable for at least 5 minutes."
+
+        - alert: VisionRAGDeploymentUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}",deployment=~"gateway-service|chat-service|public-service"} < kube_deployment_spec_replicas{namespace="{{ .Release.Namespace }}",deployment=~"gateway-service|chat-service|public-service"}
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "VisionRAG deployment replicas unavailable"
+            description: "Available replicas are below desired replicas for one of the core deployments."
+
+    - name: visionrag-platform.stability
+      rules:
+        - alert: VisionRAGPodCrashLooping
+          expr: max_over_time(kube_pod_container_status_waiting_reason{namespace="{{ .Release.Namespace }}",reason="CrashLoopBackOff",pod=~"(gateway-service|chat-service|public-service)-.*"}[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "VisionRAG pod is crash looping"
+            description: "A core application pod has been in CrashLoopBackOff state."
+
+        - alert: VisionRAGPodRestartBurst
+          expr: increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}",pod=~"(gateway-service|chat-service|public-service)-.*"}[15m]) >= 3
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "VisionRAG pod restarts detected"
+            description: "A core pod restarted at least 3 times in the last 15 minutes."
+
+        - alert: VisionRAGPodOOMKilled
+          expr: max_over_time(kube_pod_container_status_last_terminated_reason{namespace="{{ .Release.Namespace }}",reason="OOMKilled",pod=~"(gateway-service|chat-service|public-service)-.*"}[15m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "VisionRAG pod OOM killed"
+            description: "A core application container was terminated due to OOMKilled recently."
+
+    - name: visionrag-platform.capacity
+      rules:
+        - alert: VisionRAGChatHighCPU
+          expr: sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="{{ .Release.Namespace }}",pod=~"chat-service-.*",container!="",image!=""}[5m])) > {{ $chatCpuCoresWarning }}
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Chat service CPU usage is high"
+            description: "Chat service pod CPU usage has remained above configured threshold for more than 10 minutes."
+
+        - alert: VisionRAGAppPodHighMemory
+          expr: sum by (pod) (container_memory_working_set_bytes{namespace="{{ .Release.Namespace }}",pod=~"(gateway-service|chat-service|public-service)-.*",container!="",image!=""}) > {{ mul $appPodMemoryMiBWarning 1048576 }}
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Application pod memory usage is high"
+            description: "A core application pod memory working set exceeded configured threshold for more than 10 minutes."
+
+    - name: visionrag-platform.middleware
+      rules:
+        - alert: VisionRAGRedisUnavailable
+          expr: redis_up{namespace="{{ .Release.Namespace }}"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Redis is unavailable"
+            description: "Redis exporter reports redis_up equals zero for at least 5 minutes."
+
+        - alert: VisionRAGPostgresUnavailable
+          expr: pg_up{namespace="{{ .Release.Namespace }}"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "PostgreSQL is unavailable"
+            description: "Postgres exporter reports pg_up equals zero for at least 5 minutes."
+
+        - alert: VisionRAGRabbitMQBacklogHigh
+          expr: sum(rabbitmq_queue_messages{namespace="{{ .Release.Namespace }}"}) > {{ $queueMessagesWarning }}
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "RabbitMQ backlog high"
+            description: "Total queue depth exceeded warning threshold for more than 10 minutes."
+
+        - alert: VisionRAGRabbitMQBacklogCritical
+          expr: sum(rabbitmq_queue_messages{namespace="{{ .Release.Namespace }}"}) > {{ $queueMessagesCritical }}
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "RabbitMQ backlog critical"
+            description: "Total queue depth exceeded critical threshold for more than 5 minutes."
+{{- end }}

@@ -2,15 +2,18 @@
 import subprocess
 import sys
 import argparse
+import os
+from datetime import datetime
 
 """
 VisionRAG Platform Manager CLI
 Available Actions:
   init   - One-time setup for Minikube: monitoring stack -> build -> image load -> secret apply/deploy -> rollout checks -> UI
-  deploy - Daily deploy for Minikube: build -> image load -> helm upgrade -> rollout checks
+  deploy - Daily deploy for Minikube: build(tagged) -> image load -> helm upgrade -> rollout checks
   check  - Run fmt + lint + tidy in one command
   update-secret - Apply/rotate Kubernetes secret and restart dependent deployments
   build  - Build Docker images for all Go services
+  verify - Verify Helm, pods, observability stack, and API smoke flow
   smoke-test - Run local smoke tests (port-forward + health + auth + chat flow)
   ollama - Ensure local Ollama docker is running and model is ready
   obs-ui-start - Start Prometheus/Grafana local port-forward in background
@@ -45,19 +48,48 @@ def run_command(cmd, description):
         sys.exit(1)
 
 
-def build():
+def run_command_soft(cmd, description):
+    print(f"{BLUE}==>{RESET} {description}...")
+    result = subprocess.run(cmd, shell=True)
+    if result.returncode == 0:
+        print(f"{GREEN}  Done!{RESET}")
+    else:
+        print(f"{YELLOW}  Skip (non-blocking): {description}{RESET}")
+
+
+def resolve_image_tag():
+    forced_tag = os.getenv("VISIONRAG_IMAGE_TAG", "").strip()
+    if forced_tag:
+        return forced_tag
+
+    git_tag = subprocess.run(
+        "git rev-parse --short HEAD",
+        shell=True,
+        capture_output=True,
+        text=True,
+    )
+    if git_tag.returncode == 0:
+        return git_tag.stdout.strip()
+
+    return datetime.utcnow().strftime("dev-%Y%m%d%H%M%S")
+
+
+def build(tag):
     print(f"{YELLOW}--- Building Docker Images ---{RESET}")
     for name, info in SERVICES.items():
-        cmd = f"docker build -t {info['image']}:latest -f {info['path']}/Dockerfile ."
+        cmd = (
+            f"docker build -t {info['image']}:{tag} -t {info['image']}:latest "
+            f"-f {info['path']}/Dockerfile ."
+        )
         run_command(cmd, f"Building {name} service")
 
 
-def load_images_to_minikube():
+def load_images_to_minikube(tag):
     print(f"{YELLOW}--- Loading images into Minikube ---{RESET}")
     for _, info in SERVICES.items():
         run_command(
-            f"minikube image load {info['image']}:latest",
-            f"Loading image {info['image']}:latest into Minikube",
+            f"minikube image load {info['image']}:{tag}",
+            f"Loading image {info['image']}:{tag} into Minikube",
         )
 
 
@@ -120,6 +152,29 @@ def smoke_test():
     )
 
 
+def verify():
+    print(f"{YELLOW}--- Verifying platform ---{RESET}")
+    run_command("kubectl config current-context",
+                "Checking current kubectl context")
+    run_command("helm list -n default", "Checking Helm release status")
+    run_command("kubectl -n default get pods", "Checking app pods")
+    run_command("kubectl -n default get svc", "Checking app services")
+    run_command("kubectl -n default get servicemonitor",
+                "Checking ServiceMonitors")
+    run_command("kubectl -n default get prometheusrule",
+                "Checking Prometheus alert rules")
+    run_command("kubectl -n monitoring get pods", "Checking monitoring pods")
+    run_command("kubectl -n monitoring get svc kube-prometheus-stack-prometheus kube-prometheus-stack-grafana",
+                "Checking Prometheus/Grafana services")
+    obs_ui_status()
+    run_command_soft("curl -sf http://127.0.0.1:9090/-/ready >/dev/null",
+                     "Checking local Prometheus readiness (port-forward optional)")
+    run_command_soft("curl -sf http://127.0.0.1:3000/api/health >/dev/null",
+                     "Checking local Grafana health (port-forward optional)")
+    smoke_test()
+    print(f"\n{GREEN}Verify completed.{RESET}")
+
+
 def ensure_monitoring_stack():
     print(f"{YELLOW}--- Ensuring monitoring stack (CRDs + Prometheus/Grafana) ---{RESET}")
     run_command(
@@ -165,28 +220,40 @@ def update_secret():
     )
 
 
-def deploy():
-    print(f"{YELLOW}--- Minikube deploy ---{RESET}")
-    ensure_ollama()
-    build()
-    load_images_to_minikube()
-    lint()
+def helm_upgrade_with_tag(tag):
     run_command(
-        f"helm upgrade --install visionrag {CHART_PATH} -n default --create-namespace",
-        "Helm upgrade/install",
+        f"helm upgrade --install visionrag {CHART_PATH} -n default --create-namespace "
+        f"--set-string microservices.public.tag={tag} "
+        f"--set-string microservices.chat.tag={tag} "
+        f"--set-string microservices.gateway.tag={tag}",
+        f"Helm upgrade/install (tag={tag})",
     )
+
+
+def deploy():
+    tag = resolve_image_tag()
+    print(f"{YELLOW}--- Minikube deploy ---{RESET}")
+    print(f"{BLUE}Using image tag: {tag}{RESET}")
+    ensure_ollama()
+    build(tag)
+    load_images_to_minikube(tag)
+    lint()
+    helm_upgrade_with_tag(tag)
     rollout_and_wait()
     print(f"\n{GREEN}Deploy completed.{RESET}")
 
 
 def init():
+    tag = resolve_image_tag()
     print(f"{YELLOW}--- Minikube init ---{RESET}")
+    print(f"{BLUE}Using image tag: {tag}{RESET}")
     ensure_monitoring_stack()
     ensure_ollama()
-    build()
-    load_images_to_minikube()
-    run_command("scripts/apply-k8s-secret.sh --deploy",
-                "Applying secret and deploying Helm")
+    build(tag)
+    load_images_to_minikube(tag)
+    run_command("scripts/apply-k8s-secret.sh --namespace default --secret-name visionrag-platform-secrets",
+                "Applying secret")
+    helm_upgrade_with_tag(tag)
     rollout_and_wait()
     obs_ui_start()
     print(f"\n{GREEN}Observability UIs are ready:{RESET}")
@@ -219,7 +286,7 @@ def main():
     parser.add_argument(
         "action",
         choices=["init", "deploy", "check", "update-secret", "build", "ollama",
-                 "smoke-test",
+                 "smoke-test", "verify",
                  "obs-ui-start", "obs-ui-stop", "obs-ui-status",
                  "clean", "status"],
         help="Action to perform",
@@ -228,7 +295,9 @@ def main():
     args = parser.parse_args()
 
     if args.action == "build":
-        build()
+        tag = resolve_image_tag()
+        print(f"{BLUE}Using image tag: {tag}{RESET}")
+        build(tag)
     elif args.action == "deploy":
         deploy()
     elif args.action == "init":
@@ -241,6 +310,8 @@ def main():
         ensure_ollama()
     elif args.action == "smoke-test":
         smoke_test()
+    elif args.action == "verify":
+        verify()
     elif args.action == "obs-ui-start":
         obs_ui_start()
     elif args.action == "obs-ui-stop":

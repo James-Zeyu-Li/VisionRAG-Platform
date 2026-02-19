@@ -46,6 +46,12 @@ func InitConfig() error {
 	if url := os.Getenv("CHAT_SERVICE_URL"); url != "" {
 		config.ServicesConfig.ChatServiceUrl = url
 	}
+	if secret := os.Getenv("JWT_SECRET"); secret != "" {
+		config.JwtConfig.Key = secret
+		log.Printf("Config: JWT key loaded from env (len=%d)", len(secret))
+	} else {
+		log.Printf("Config: JWT key loaded from config file (len=%d)", len(config.JwtConfig.Key))
+	}
 
 	return nil
 }
