@@ -5,7 +5,10 @@ metadata:
   labels:
     {{- include "visionrag.labels" . | nindent 4 }}
 spec:
+  {{- $autoscaling := .Values.microservices.chat.autoscaling | default dict }}
+  {{- if not ($autoscaling.enabled | default false) }}
   replicas: {{ .Values.microservices.chat.replicas | default 1 }}
+  {{- end }}
   selector:
     matchLabels:
       app: chat-service
@@ -20,6 +23,10 @@ spec:
         imagePullPolicy: {{ .Values.microservices.chat.pullPolicy | default "IfNotPresent" }}
         ports:
         - containerPort: 9092
+        {{- with .Values.microservices.chat.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         volumeMounts:
         - name: log-storage
           mountPath: /var/log/chat
@@ -44,6 +51,10 @@ spec:
       - name: log-collector
         image: busybox:latest
         command: ["sh", "-c", "until [ -f /var/log/chat/app.log ]; do sleep 1; done; tail -f /var/log/chat/app.log"]
+        {{- with .Values.microservices.chat.sidecarResources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         volumeMounts:
         - name: log-storage
           mountPath: /var/log/chat

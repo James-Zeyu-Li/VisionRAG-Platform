@@ -37,13 +37,12 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "description": "1 means the target is healthy and being scraped.",
+          "description": "Top-level app target health. Keep this compact and focus below on resource usage.",
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
               "max": 1,
               "min": 0,
               "thresholds": {
@@ -64,8 +63,8 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 8,
-            "w": 24,
+            "h": 6,
+            "w": 6,
             "x": 0,
             "y": 0
           },
@@ -88,14 +87,14 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "up{namespace=\"$namespace\",job=~\"gateway-service|chat-service|public-service|redis|rabbitmq|postgres\"}",
+              "expr": "up{namespace=\"$namespace\",job=~\"gateway-service|chat-service|public-service\"}",
               "instant": true,
-              "legendFormat": "job",
+              "legendFormat": "{{`{{job}}`}}",
               "range": false,
               "refId": "A"
             }
           ],
-          "title": "Service UP",
+          "title": "App Target UP",
           "type": "stat"
         },
         {
@@ -103,153 +102,12 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "unit": "cores"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 8
-          },
-          "id": 2,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "11.0.0",
-          "targets": [
-            {
-              "editorMode": "code",
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\"}[5m])) by (pod)",
-              "legendFormat": "pod",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Pod CPU Usage",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 8
-          },
-          "id": 3,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "11.0.0",
-          "targets": [
-            {
-              "editorMode": "code",
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\"}) by (pod)",
-              "legendFormat": "pod",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Pod Memory Working Set",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 16
-          },
-          "id": 4,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "11.0.0",
-          "targets": [
-            {
-              "editorMode": "code",
-              "expr": "rabbitmq_queue_messages{namespace=\"$namespace\"}",
-              "legendFormat": "queue",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "RabbitMQ Queue Messages",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
+          "description": "Middleware target health for Redis, RabbitMQ and Postgres exporters.",
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
               "max": 1,
               "min": 0,
               "thresholds": {
@@ -270,12 +128,12 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 16
+            "h": 6,
+            "w": 6,
+            "x": 6,
+            "y": 0
           },
-          "id": 5,
+          "id": 2,
           "options": {
             "colorMode": "background",
             "graphMode": "none",
@@ -294,23 +152,582 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "redis_up{namespace=\"$namespace\"}",
+              "expr": "up{namespace=\"$namespace\",job=~\"redis-service|rabbitmq-service|postgres-service\"}",
               "instant": true,
-              "legendFormat": "redis_up",
+              "legendFormat": "{{`{{job}}`}}",
               "range": false,
               "refId": "A"
-            },
-            {
-              "editorMode": "code",
-              "expr": "pg_up{namespace=\"$namespace\"}",
-              "instant": true,
-              "legendFormat": "pg_up",
-              "range": false,
-              "refId": "B"
             }
           ],
-          "title": "Redis / Postgres UP",
+          "title": "Infra Target UP",
           "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Firing alerts count for selected namespace.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "id": 3,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "value"
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(ALERTS{alertstate=\"firing\",namespace=\"$namespace\"}) or vector(0)",
+              "instant": true,
+              "legendFormat": "firing",
+              "range": false,
+              "refId": "A"
+            }
+          ],
+          "title": "Firing Alerts",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Current desired replicas from HPA for app services.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "name"
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"$namespace\",horizontalpodautoscaler=~\"chat-service-hpa|public-service-hpa|gateway-service-hpa\"}",
+              "instant": true,
+              "legendFormat": "{{`{{horizontalpodautoscaler}}`}}",
+              "range": false,
+              "refId": "A"
+            }
+          ],
+          "title": "HPA Desired Replicas",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "cores"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 6
+          },
+          "id": 10,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum by (service) (label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"(gateway-service|chat-service|public-service)-.*\",cpu=\"total\"}[5m]), \"service\", \"$1\", \"pod\", \"(gateway-service|chat-service|public-service)-.*\"))",
+              "legendFormat": "{{`{{service}}`}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "App CPU Usage by Service",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 6
+          },
+          "id": 11,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum by (service) (label_replace(container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"(gateway-service|chat-service|public-service)-.*\"}, \"service\", \"$1\", \"pod\", \"(gateway-service|chat-service|public-service)-.*\"))",
+              "legendFormat": "{{`{{service}}`}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "App Memory Usage by Service",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 14
+          },
+          "id": 12,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "100 * sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"(gateway-service|chat-service|public-service)-.*\",cpu=\"total\"}[5m])) / clamp_min(sum by (pod) (kube_pod_container_resource_requests{namespace=\"$namespace\",pod=~\"(gateway-service|chat-service|public-service)-.*\",resource=\"cpu\",unit=\"core\"}), 0.001)",
+              "legendFormat": "{{`{{pod}}`}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "App CPU Utilization vs Requests",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 14
+          },
+          "id": 13,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "100 * sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"(gateway-service|chat-service|public-service)-.*\"}) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\",pod=~\"(gateway-service|chat-service|public-service)-.*\",resource=\"memory\",unit=\"byte\"}), 1)",
+              "legendFormat": "{{`{{pod}}`}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "App Memory Utilization vs Limits",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 22
+          },
+          "id": 20,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum by (queue) (rabbitmq_queue_messages{namespace=\"$namespace\"})",
+              "legendFormat": "{{`{{queue}}`}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "RabbitMQ Queue Depth",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 22
+          },
+          "id": 21,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(redis_memory_used_bytes{namespace=\"$namespace\"})",
+              "legendFormat": "redis_memory_used_bytes",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Redis Memory Used",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 22
+          },
+          "id": 22,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(redis_connected_clients{namespace=\"$namespace\"})",
+              "legendFormat": "redis_connected_clients",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Redis Connected Clients",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 22
+          },
+          "id": 23,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(pg_stat_database_numbackends{namespace=\"$namespace\",datname!~\"template0|template1\"})",
+              "legendFormat": "pg_numbackends",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Postgres Active Connections",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "cores"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 30
+          },
+          "id": 24,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"(rabbitmq|redis|postgres-db)-.*\",cpu=\"total\"}[5m]))",
+              "legendFormat": "{{`{{pod}}`}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Middleware CPU Usage by Pod",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 30
+          },
+          "id": 25,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"(rabbitmq|redis|postgres-db)-.*\"})",
+              "legendFormat": "{{`{{pod}}`}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Middleware Memory Usage by Pod",
+          "type": "timeseries"
         }
       ],
       "refresh": "30s",
@@ -375,9 +792,9 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "VisionRAG Overview",
+      "title": "VisionRAG Platform Overview",
       "uid": "visionrag-overview",
-      "version": 1,
+      "version": 2,
       "weekStart": ""
     }
 {{- end }}

@@ -5,7 +5,10 @@ metadata:
   labels:
     {{- include "visionrag.labels" . | nindent 4 }}
 spec:
+  {{- $autoscaling := .Values.microservices.gateway.autoscaling | default dict }}
+  {{- if not ($autoscaling.enabled | default false) }}
   replicas: {{ .Values.microservices.gateway.replicas | default 1 }}
+  {{- end }}
   selector:
     matchLabels:
       app: gateway-service
@@ -20,6 +23,10 @@ spec:
         imagePullPolicy: {{ .Values.microservices.gateway.pullPolicy | default "IfNotPresent" }}
         ports:
         - containerPort: 9000
+        {{- with .Values.microservices.gateway.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: gateway-service-config

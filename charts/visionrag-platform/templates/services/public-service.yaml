@@ -5,7 +5,10 @@ metadata:
   labels:
     {{- include "visionrag.labels" . | nindent 4 }}
 spec:
+  {{- $autoscaling := .Values.microservices.public.autoscaling | default dict }}
+  {{- if not ($autoscaling.enabled | default false) }}
   replicas: {{ .Values.microservices.public.replicas | default 1 }}
+  {{- end }}
   selector:
     matchLabels:
       app: public-service
@@ -20,6 +23,10 @@ spec:
         imagePullPolicy: {{ .Values.microservices.public.pullPolicy | default "IfNotPresent" }}
         ports:
         - containerPort: 9090
+        {{- with .Values.microservices.public.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: public-service-config

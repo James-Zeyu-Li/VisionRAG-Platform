@@ -28,17 +28,66 @@ microservices:
     name: public-service
     image: visionrag-public
     tag: latest
+    pullPolicy: IfNotPresent
     replicas: 2
+    resources:
+      requests:
+        cpu: 150m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 75
   chat:
     name: chat-service
     image: visionrag-chat
     tag: latest
+    pullPolicy: IfNotPresent
     replicas: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1024Mi
+    sidecarResources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 75
+      behavior:
+        scaleUpStabilizationWindowSeconds: 0
+        scaleDownStabilizationWindowSeconds: 300
   gateway:
     name: gateway-service
     image: visionrag-gateway
     tag: latest
+    pullPolicy: IfNotPresent
     replicas: 1
+    resources:
+      requests:
+        cpu: 150m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 75
 
 observability:
   serviceMonitor:

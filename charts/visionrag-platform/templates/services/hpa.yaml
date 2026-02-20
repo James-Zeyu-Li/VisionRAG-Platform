@@ -1,0 +1,115 @@
+{{- $chatAuto := .Values.microservices.chat.autoscaling | default dict }}
+{{- if ($chatAuto.enabled | default false) }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chat-service-hpa
+  labels:
+    {{- include "visionrag.labels" . | nindent 4 }}
+    app: chat-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chat-service
+  minReplicas: {{ $chatAuto.minReplicas | default 1 }}
+  maxReplicas: {{ $chatAuto.maxReplicas | default 5 }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ (get ($chatAuto.behavior | default dict) "scaleUpStabilizationWindowSeconds") | default 0 }}
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: {{ (get ($chatAuto.behavior | default dict) "scaleDownStabilizationWindowSeconds") | default 300 }}
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $chatAuto.targetCPUUtilizationPercentage | default 75 }}
+---
+{{- end }}
+
+{{- $publicAuto := .Values.microservices.public.autoscaling | default dict }}
+{{- if ($publicAuto.enabled | default false) }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: public-service-hpa
+  labels:
+    {{- include "visionrag.labels" . | nindent 4 }}
+    app: public-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: public-service
+  minReplicas: {{ $publicAuto.minReplicas | default 2 }}
+  maxReplicas: {{ $publicAuto.maxReplicas | default 5 }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ (get ($publicAuto.behavior | default dict) "scaleUpStabilizationWindowSeconds") | default 0 }}
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: {{ (get ($publicAuto.behavior | default dict) "scaleDownStabilizationWindowSeconds") | default 300 }}
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $publicAuto.targetCPUUtilizationPercentage | default 75 }}
+---
+{{- end }}
+
+{{- $gatewayAuto := .Values.microservices.gateway.autoscaling | default dict }}
+{{- if ($gatewayAuto.enabled | default false) }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway-service-hpa
+  labels:
+    {{- include "visionrag.labels" . | nindent 4 }}
+    app: gateway-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gateway-service
+  minReplicas: {{ $gatewayAuto.minReplicas | default 1 }}
+  maxReplicas: {{ $gatewayAuto.maxReplicas | default 4 }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ (get ($gatewayAuto.behavior | default dict) "scaleUpStabilizationWindowSeconds") | default 0 }}
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: {{ (get ($gatewayAuto.behavior | default dict) "scaleDownStabilizationWindowSeconds") | default 300 }}
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $gatewayAuto.targetCPUUtilizationPercentage | default 75 }}
+{{- end }}

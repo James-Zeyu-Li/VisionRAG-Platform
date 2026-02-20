@@ -163,6 +163,10 @@ def verify():
                 "Checking ServiceMonitors")
     run_command("kubectl -n default get prometheusrule",
                 "Checking Prometheus alert rules")
+    run_command("kubectl get apiservice v1beta1.metrics.k8s.io",
+                "Checking metrics-server APIService")
+    run_command("kubectl top pod -n default",
+                "Checking pod metrics for HPA prerequisites")
     run_command("kubectl -n monitoring get pods", "Checking monitoring pods")
     run_command("kubectl -n monitoring get svc kube-prometheus-stack-prometheus kube-prometheus-stack-grafana",
                 "Checking Prometheus/Grafana services")
