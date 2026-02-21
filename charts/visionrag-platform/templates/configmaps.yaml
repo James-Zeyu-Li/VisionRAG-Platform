@@ -1,3 +1,39 @@
+{{- $pgEnabled := true -}}
+{{- if hasKey .Values.infrastructure.postgres "enabled" -}}
+{{- $pgEnabled = .Values.infrastructure.postgres.enabled -}}
+{{- end -}}
+
+{{- $redisEnabled := true -}}
+{{- if hasKey .Values.infrastructure.redis "enabled" -}}
+{{- $redisEnabled = .Values.infrastructure.redis.enabled -}}
+{{- end -}}
+
+{{- $rabbitEnabled := true -}}
+{{- if hasKey .Values.infrastructure.rabbitmq "enabled" -}}
+{{- $rabbitEnabled = .Values.infrastructure.rabbitmq.enabled -}}
+{{- end -}}
+
+{{- $pgHost := .Values.infrastructure.postgres.serviceName | default "postgres-service" -}}
+{{- if not $pgEnabled -}}
+{{- $pgHost = required "external.postgres.host is required when infrastructure.postgres.enabled=false" .Values.external.postgres.host -}}
+{{- end -}}
+{{- $pgPort := ternary (.Values.infrastructure.postgres.port | default 5432) (.Values.external.postgres.port | default 5432) $pgEnabled -}}
+{{- $dbName := ternary .Values.global.dbName (.Values.external.postgres.dbName | default .Values.global.dbName) $pgEnabled -}}
+
+{{- $redisHost := .Values.infrastructure.redis.serviceName | default "redis-service" -}}
+{{- if not $redisEnabled -}}
+{{- $redisHost = required "external.redis.host is required when infrastructure.redis.enabled=false" .Values.external.redis.host -}}
+{{- end -}}
+{{- $redisPort := ternary (.Values.infrastructure.redis.port | default 6379) (.Values.external.redis.port | default 6379) $redisEnabled -}}
+{{- $redisDb := ternary .Values.global.redisDb (.Values.external.redis.db | default .Values.global.redisDb) $redisEnabled -}}
+
+{{- $rabbitHost := .Values.infrastructure.rabbitmq.serviceName | default "rabbitmq-service" -}}
+{{- if not $rabbitEnabled -}}
+{{- $rabbitHost = required "external.rabbitmq.host is required when infrastructure.rabbitmq.enabled=false" .Values.external.rabbitmq.host -}}
+{{- end -}}
+{{- $rabbitPort := ternary (.Values.infrastructure.rabbitmq.port | default 5672) (.Values.external.rabbitmq.port | default 5672) $rabbitEnabled -}}
+{{- $rabbitVhost := ternary "/" (.Values.external.rabbitmq.vhost | default "/") $rabbitEnabled -}}
+
 {{- range $key, $val := .Values.microservices }}
 ---
 apiVersion: v1
@@ -6,18 +42,18 @@ metadata:
   name: {{ $val.name }}-config
 data:
   # Database
-  DB_HOST: "postgres-service"
-  DB_PORT: {{ $.Values.infrastructure.postgres.port | quote }}
-  DB_NAME: {{ $.Values.global.dbName | quote }}
+  DB_HOST: {{ $pgHost | quote }}
+  DB_PORT: {{ $pgPort | quote }}
+  DB_NAME: {{ $dbName | quote }}
   DB_TIMEZONE: {{ $.Values.global.timezone | quote }}
   
   # Redis
-  REDIS_HOST: "redis-service"
-  REDIS_PORT: {{ $.Values.infrastructure.redis.port | quote }}
-  REDIS_DB: {{ $.Values.global.redisDb | quote }}
+  REDIS_HOST: {{ $redisHost | quote }}
+  REDIS_PORT: {{ $redisPort | quote }}
+  REDIS_DB: {{ $redisDb | quote }}
   
   # RabbitMQ
-  RABBITMQ_HOST: "rabbitmq-service"
-  RABBITMQ_PORT: {{ $.Values.infrastructure.rabbitmq.port | quote }}
-  RABBITMQ_VHOST: "/"
+  RABBITMQ_HOST: {{ $rabbitHost | quote }}
+  RABBITMQ_PORT: {{ $rabbitPort | quote }}
+  RABBITMQ_VHOST: {{ $rabbitVhost | quote }}
 {{- end }}

@@ -3,6 +3,7 @@ import argparse
 import base64
 import json
 import os
+import random
 import socket
 import subprocess
 import sys
@@ -231,22 +232,33 @@ def app_health_checks(gateway_url, public_url, chat_url):
 
 
 def run_user_flow(namespace, gateway_url, with_ai, model_type):
-    email = f"smoke_{int(time.time())}@example.com"
     password = "Passw0rd123!"
+    register_token = None
+    email = None
+    register_attempts = 5
+    for i in range(register_attempts):
+        unique = f"{int(time.time() * 1000)}_{random.randint(1000, 9999)}"
+        email = f"smoke_{unique}@example.com"
+        captcha_resp = http_json("POST", f"{gateway_url}/api/v1/user/captcha", {"email": email})
+        expect_code_ok(captcha_resp, "captcha")
+        captcha = read_captcha_from_redis(namespace, email)
+        register_resp = http_json(
+            "POST",
+            f"{gateway_url}/api/v1/user/register",
+            {"email": email, "password": password, "captcha": captcha},
+        )
+        if register_resp.get("status_code") == STATUS_OK_CODE:
+            register_token = register_resp.get("token")
+            break
+        if register_resp.get("status_code") != 2002:
+            expect_code_ok(register_resp, "register")
+        # Retry on conflict-like register failure.
+        time.sleep(0.2 + i * 0.1)
 
-    captcha_resp = http_json("POST", f"{gateway_url}/api/v1/user/captcha", {"email": email})
-    expect_code_ok(captcha_resp, "captcha")
-
-    captcha = read_captcha_from_redis(namespace, email)
-    register_resp = http_json(
-        "POST",
-        f"{gateway_url}/api/v1/user/register",
-        {"email": email, "password": password, "captcha": captcha},
-    )
-    expect_code_ok(register_resp, "register")
-    register_token = register_resp.get("token")
     if not register_token:
-        raise RuntimeError("register token missing")
+        raise RuntimeError(
+            f"register failed after {register_attempts} attempts: {json.dumps(register_resp, ensure_ascii=False)}"
+        )
 
     username = decode_jwt_username(register_token)
     login_resp = http_json(

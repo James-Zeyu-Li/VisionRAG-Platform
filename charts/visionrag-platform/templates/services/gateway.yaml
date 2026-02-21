@@ -6,6 +6,7 @@ metadata:
     {{- include "visionrag.labels" . | nindent 4 }}
 spec:
   {{- $autoscaling := .Values.microservices.gateway.autoscaling | default dict }}
+  {{- $probes := .Values.microservices.gateway.probes | default dict }}
   {{- if not ($autoscaling.enabled | default false) }}
   replicas: {{ .Values.microservices.gateway.replicas | default 1 }}
   {{- end }}
@@ -32,6 +33,24 @@ spec:
             name: gateway-service-config
         - secretRef:
             name: {{ .Values.global.existingSecretName | default "visionrag-platform-secrets" }}
+        {{- if ($probes.enabled | default true) }}
+        livenessProbe:
+          httpGet:
+            path: {{ $probes.path | default "/health" }}
+            port: 9000
+          initialDelaySeconds: {{ $probes.livenessInitialDelaySeconds | default 20 }}
+          periodSeconds: {{ $probes.livenessPeriodSeconds | default 10 }}
+          timeoutSeconds: {{ $probes.timeoutSeconds | default 1 }}
+          failureThreshold: {{ $probes.livenessFailureThreshold | default 3 }}
+        readinessProbe:
+          httpGet:
+            path: {{ $probes.path | default "/health" }}
+            port: 9000
+          initialDelaySeconds: {{ $probes.readinessInitialDelaySeconds | default 5 }}
+          periodSeconds: {{ $probes.readinessPeriodSeconds | default 10 }}
+          timeoutSeconds: {{ $probes.timeoutSeconds | default 1 }}
+          failureThreshold: {{ $probes.readinessFailureThreshold | default 3 }}
+        {{- end }}
 ---
 apiVersion: v1
 kind: Service

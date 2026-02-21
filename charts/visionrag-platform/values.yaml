@@ -12,16 +12,34 @@ infrastructure:
   postgres:
     enabled: true
     image: postgres:16-alpine
+    serviceName: postgres-service
     port: 5432
   redis:
     enabled: true
     image: redis:6.2-alpine
+    serviceName: redis-service
     port: 6379
   rabbitmq:
     enabled: true
     image: rabbitmq:3-management-alpine
+    serviceName: rabbitmq-service
     port: 5672
     mgmtPort: 15672
+    prometheusPort: 15692
+
+external:
+  postgres:
+    host: ""
+    port: 5432
+    dbName: visionrag
+  redis:
+    host: ""
+    port: 6379
+    db: 0
+  rabbitmq:
+    host: ""
+    port: 5672
+    vhost: /
 
 microservices:
   public:
@@ -42,6 +60,16 @@ microservices:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 75
+    probes:
+      enabled: true
+      path: /health
+      livenessInitialDelaySeconds: 20
+      livenessPeriodSeconds: 10
+      livenessFailureThreshold: 3
+      readinessInitialDelaySeconds: 5
+      readinessPeriodSeconds: 10
+      readinessFailureThreshold: 3
+      timeoutSeconds: 1
   chat:
     name: chat-service
     image: visionrag-chat
@@ -88,6 +116,16 @@ microservices:
       minReplicas: 1
       maxReplicas: 4
       targetCPUUtilizationPercentage: 75
+    probes:
+      enabled: true
+      path: /health
+      livenessInitialDelaySeconds: 20
+      livenessPeriodSeconds: 10
+      livenessFailureThreshold: 3
+      readinessInitialDelaySeconds: 5
+      readinessPeriodSeconds: 10
+      readinessFailureThreshold: 3
+      timeoutSeconds: 1
 
 observability:
   serviceMonitor:
@@ -101,7 +139,9 @@ observability:
     labels:
       release: kube-prometheus-stack
     thresholds:
-      chatCpuCoresWarning: 0.75
+      cpuRequestUtilizationPercentWarning: 80
+      cpuLimitUtilizationPercentWarning: 90
+      cpuThrottlingPercentWarning: 20
       appPodMemoryMiBWarning: 600
       queueMessagesWarning: 100
       queueMessagesCritical: 1000

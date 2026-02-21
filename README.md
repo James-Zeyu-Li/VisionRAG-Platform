@@ -69,6 +69,23 @@ Default env source file:
 
 * `.secrets/visionrag.env`
 
+## Helm Environment Profiles
+
+This chart supports both in-cluster infrastructure and external managed services.
+
+* `charts/visionrag-platform/values-local.yaml`: use in-cluster PostgreSQL, Redis, RabbitMQ.
+* `charts/visionrag-platform/values-gcp.yaml`: disable in-cluster infra and use external hosts.
+
+Deploy with a profile:
+
+```bash
+# Local/Minikube (default behavior)
+helm upgrade --install visionrag charts/visionrag-platform -n default -f charts/visionrag-platform/values-local.yaml
+
+# GCP/external infra
+helm upgrade --install visionrag charts/visionrag-platform -n default -f charts/visionrag-platform/values-gcp.yaml
+```
+
 ## Local Smoke Test CLI
 
 Run one command to validate:
