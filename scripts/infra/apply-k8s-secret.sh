@@ -6,17 +6,19 @@ SECRET_NAME="${SECRET_NAME:-visionrag-platform-secrets}"
 ENV_FILE="${ENV_FILE:-.secrets/visionrag.env}"
 RELEASE_NAME="${RELEASE_NAME:-visionrag}"
 CHART_PATH="${CHART_PATH:-charts/visionrag-platform}"
+VALUES_FILE="${VALUES_FILE:-}"
+HELM_TIMEOUT="${HELM_TIMEOUT:-10m}"
 DO_DEPLOY="false"
 
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/apply-k8s-secret.sh [--deploy] [--namespace <ns>] [--secret-name <name>] [--env-file <path>]
+  scripts/apply-k8s-secret.sh [--deploy] [--namespace <ns>] [--secret-name <name>] [--env-file <path>] [--values-file <path>] [--helm-timeout <duration>]
 
 Examples:
   scripts/apply-k8s-secret.sh
   scripts/apply-k8s-secret.sh --deploy
-  scripts/apply-k8s-secret.sh --namespace dev --secret-name visionrag-platform-secrets --env-file .secrets/visionrag.env
+  scripts/apply-k8s-secret.sh --namespace dev --secret-name visionrag-platform-secrets --env-file .secrets/visionrag.env --values-file charts/visionrag-platform/values-dev.yaml
 USAGE
 }
 
@@ -36,6 +38,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --env-file)
       ENV_FILE="${2:?missing env-file value}"
+      shift 2
+      ;;
+    --values-file)
+      VALUES_FILE="${2:?missing values-file value}"
+      shift 2
+      ;;
+    --helm-timeout)
+      HELM_TIMEOUT="${2:?missing helm-timeout value}"
       shift 2
       ;;
     -h|--help)
@@ -65,6 +75,11 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+if [[ -n "$VALUES_FILE" ]] && [[ ! -f "$VALUES_FILE" ]]; then
+  echo "Values file not found: $VALUES_FILE"
+  exit 1
+fi
+
 if rg -n "CHANGE_ME" "$ENV_FILE" >/dev/null 2>&1; then
   echo "Found placeholder values in $ENV_FILE. Replace CHANGE_ME_* before applying."
   exit 1
@@ -80,7 +95,12 @@ echo "Secret applied successfully."
 
 if [[ "$DO_DEPLOY" == "true" ]]; then
   echo "Running Helm upgrade/install..."
-  helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" -n "$NAMESPACE" --create-namespace
+  VALUES_ARG=()
+  if [[ -n "$VALUES_FILE" ]]; then
+    VALUES_ARG=(-f "$VALUES_FILE")
+  fi
+  helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" -n "$NAMESPACE" --create-namespace \
+    "${VALUES_ARG[@]}" --atomic --wait --timeout "$HELM_TIMEOUT"
   echo "Deployment updated."
 else
   echo "Tip: run with --deploy to apply Helm after secret update."

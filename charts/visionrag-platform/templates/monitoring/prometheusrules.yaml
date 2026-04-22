@@ -3,10 +3,27 @@
 {{- $prEnabled := get $pr "enabled" | default false -}}
 {{- $prLabels := get $pr "labels" | default dict -}}
 {{- $thresholds := get $pr "thresholds" | default dict -}}
+{{- $infra := .Values.infrastructure | default dict -}}
+{{- $pgEnabled := true -}}
+{{- $pgCfg := get $infra "postgres" | default dict -}}
+{{- if hasKey $pgCfg "enabled" -}}
+{{- $pgEnabled = (get $pgCfg "enabled") -}}
+{{- end -}}
+{{- $redisEnabled := true -}}
+{{- $redisCfg := get $infra "redis" | default dict -}}
+{{- if hasKey $redisCfg "enabled" -}}
+{{- $redisEnabled = (get $redisCfg "enabled") -}}
+{{- end -}}
+{{- $rabbitEnabled := true -}}
+{{- $rabbitCfg := get $infra "rabbitmq" | default dict -}}
+{{- if hasKey $rabbitCfg "enabled" -}}
+{{- $rabbitEnabled = (get $rabbitCfg "enabled") -}}
+{{- end -}}
+{{- $infraEnabled := or $pgEnabled (or $redisEnabled $rabbitEnabled) -}}
 {{- $cpuRequestUtilizationPercentWarning := get $thresholds "cpuRequestUtilizationPercentWarning" | default 80 -}}
 {{- $cpuLimitUtilizationPercentWarning := get $thresholds "cpuLimitUtilizationPercentWarning" | default 90 -}}
 {{- $cpuThrottlingPercentWarning := get $thresholds "cpuThrottlingPercentWarning" | default 20 -}}
-{{- $appPodMemoryMiBWarning := get $thresholds "appPodMemoryMiBWarning" | default 600 -}}
+{{- $memoryLimitUtilizationPercentWarning := get $thresholds "memoryLimitUtilizationPercentWarning" | default 90 -}}
 {{- $queueMessagesWarning := get $thresholds "queueMessagesWarning" | default 100 -}}
 {{- $queueMessagesCritical := get $thresholds "queueMessagesCritical" | default 1000 -}}
 {{- if $prEnabled }}
@@ -34,7 +51,7 @@ spec:
           annotations:
             summary: "VisionRAG application target down"
             description: "One of gateway chat public service scrape targets is down for at least 2 minutes."
-
+{{- if $infraEnabled }}
         - alert: VisionRAGInfraTargetDown
           expr: up{namespace="{{ .Release.Namespace }}",job=~"redis-service|postgres-service|rabbitmq-service"} == 0
           for: 5m
@@ -44,7 +61,7 @@ spec:
           annotations:
             summary: "VisionRAG infrastructure target down"
             description: "A Redis Postgres or RabbitMQ metrics target has been unavailable for at least 5 minutes."
-
+{{- end }}
         - alert: VisionRAGDeploymentUnavailable
           expr: kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}",deployment=~"gateway-service|chat-service|public-service"} < kube_deployment_spec_replicas{namespace="{{ .Release.Namespace }}",deployment=~"gateway-service|chat-service|public-service"}
           for: 5m
@@ -119,18 +136,61 @@ spec:
             summary: "Application CPU throttling is high"
             description: "A core application pod has sustained CPU throttling, which may impact latency and throughput."
 
-        - alert: VisionRAGAppPodHighMemory
-          expr: sum by (pod) (container_memory_working_set_bytes{namespace="{{ .Release.Namespace }}",pod=~"(gateway-service|chat-service|public-service)-.*"}) > {{ mul $appPodMemoryMiBWarning 1048576 }}
+        - alert: VisionRAGAppMemoryLimitUtilizationHigh
+          expr: (100 * sum by (pod) (container_memory_working_set_bytes{namespace="{{ .Release.Namespace }}",pod=~"(gateway-service|chat-service|public-service)-.*"}) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace="{{ .Release.Namespace }}",pod=~"(gateway-service|chat-service|public-service)-.*",resource="memory",unit="byte"}), 1)) > {{ $memoryLimitUtilizationPercentWarning }} and on (pod) sum by (pod) (kube_pod_container_resource_limits{namespace="{{ .Release.Namespace }}",pod=~"(gateway-service|chat-service|public-service)-.*",resource="memory",unit="byte"}) > 0
           for: 10m
           labels:
             severity: warning
             team: platform
           annotations:
-            summary: "Application pod memory usage is high"
-            description: "A core application pod memory working set exceeded configured threshold for more than 10 minutes."
+            summary: "Application memory limit utilization is high"
+            description: "One of the core application pods is close to memory limit saturation for 10 minutes."
+{{- if $infraEnabled }}
+        - alert: VisionRAGInfraCPURequestUtilizationHigh
+          expr: (100 * sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*",cpu="total"}[5m])) / clamp_min(sum by (pod) (kube_pod_container_resource_requests{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*",resource="cpu",unit="core"}), 0.001)) > {{ $cpuRequestUtilizationPercentWarning }} and on (pod) sum by (pod) (kube_pod_container_resource_requests{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*",resource="cpu",unit="core"}) > 0
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Infrastructure CPU request utilization is high"
+            description: "Redis Postgres or RabbitMQ pod CPU is above request-based threshold for 10 minutes."
 
+        - alert: VisionRAGInfraCPULimitUtilizationHigh
+          expr: (100 * sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*",cpu="total"}[5m])) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*",resource="cpu",unit="core"}), 0.001)) > {{ $cpuLimitUtilizationPercentWarning }} and on (pod) sum by (pod) (kube_pod_container_resource_limits{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*",resource="cpu",unit="core"}) > 0
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Infrastructure CPU limit utilization is high"
+            description: "Redis Postgres or RabbitMQ pod CPU is close to limit saturation for 10 minutes."
+
+        - alert: VisionRAGInfraCPUThrottlingHigh
+          expr: (100 * sum by (pod) (rate(container_cpu_cfs_throttled_periods_total{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*"}[5m])) / clamp_min(sum by (pod) (rate(container_cpu_cfs_periods_total{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*"}[5m])), 1)) > {{ $cpuThrottlingPercentWarning }}
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Infrastructure CPU throttling is high"
+            description: "Redis Postgres or RabbitMQ pods are being throttled and may impact system latency."
+
+        - alert: VisionRAGInfraMemoryLimitUtilizationHigh
+          expr: (100 * sum by (pod) (container_memory_working_set_bytes{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*"}) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*",resource="memory",unit="byte"}), 1)) > {{ $memoryLimitUtilizationPercentWarning }} and on (pod) sum by (pod) (kube_pod_container_resource_limits{namespace="{{ .Release.Namespace }}",pod=~"(redis|rabbitmq|postgres-db)-.*",resource="memory",unit="byte"}) > 0
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Infrastructure memory limit utilization is high"
+            description: "Redis Postgres or RabbitMQ pods are close to memory limit saturation for 10 minutes."
+{{- end }}
+
+{{- if $infraEnabled }}
     - name: visionrag-platform.middleware
       rules:
+{{- if $redisEnabled }}
         - alert: VisionRAGRedisUnavailable
           expr: redis_up{namespace="{{ .Release.Namespace }}"} == 0
           for: 5m
@@ -140,7 +200,8 @@ spec:
           annotations:
             summary: "Redis is unavailable"
             description: "Redis exporter reports redis_up equals zero for at least 5 minutes."
-
+{{- end }}
+{{- if $pgEnabled }}
         - alert: VisionRAGPostgresUnavailable
           expr: pg_up{namespace="{{ .Release.Namespace }}"} == 0
           for: 5m
@@ -150,7 +211,8 @@ spec:
           annotations:
             summary: "PostgreSQL is unavailable"
             description: "Postgres exporter reports pg_up equals zero for at least 5 minutes."
-
+{{- end }}
+{{- if $rabbitEnabled }}
         - alert: VisionRAGRabbitMQBacklogHigh
           expr: sum(rabbitmq_queue_messages{namespace="{{ .Release.Namespace }}"}) > {{ $queueMessagesWarning }}
           for: 10m
@@ -170,4 +232,6 @@ spec:
           annotations:
             summary: "RabbitMQ backlog critical"
             description: "Total queue depth exceeded critical threshold for more than 5 minutes."
+{{- end }}
+{{- end }}
 {{- end }}

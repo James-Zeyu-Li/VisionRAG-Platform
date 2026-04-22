@@ -1,3 +1,18 @@
+{{- $pgEnabled := true -}}
+{{- if hasKey .Values.infrastructure.postgres "enabled" -}}
+{{- $pgEnabled = .Values.infrastructure.postgres.enabled -}}
+{{- end -}}
+
+{{- $redisEnabled := true -}}
+{{- if hasKey .Values.infrastructure.redis "enabled" -}}
+{{- $redisEnabled = .Values.infrastructure.redis.enabled -}}
+{{- end -}}
+
+{{- $rabbitEnabled := true -}}
+{{- if hasKey .Values.infrastructure.rabbitmq "enabled" -}}
+{{- $rabbitEnabled = .Values.infrastructure.rabbitmq.enabled -}}
+{{- end -}}
+
 {{- if .Values.observability.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -67,6 +82,7 @@ spec:
       path: /metrics
       interval: {{ .Values.observability.serviceMonitor.interval | quote }}
       scrapeTimeout: {{ .Values.observability.serviceMonitor.scrapeTimeout | quote }}
+{{- if $rabbitEnabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -90,6 +106,8 @@ spec:
       path: /metrics
       interval: {{ .Values.observability.serviceMonitor.interval | quote }}
       scrapeTimeout: {{ .Values.observability.serviceMonitor.scrapeTimeout | quote }}
+{{- end }}
+{{- if $redisEnabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -113,6 +131,8 @@ spec:
       path: /metrics
       interval: {{ .Values.observability.serviceMonitor.interval | quote }}
       scrapeTimeout: {{ .Values.observability.serviceMonitor.scrapeTimeout | quote }}
+{{- end }}
+{{- if $pgEnabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -136,4 +156,5 @@ spec:
       path: /metrics
       interval: {{ .Values.observability.serviceMonitor.interval | quote }}
       scrapeTimeout: {{ .Values.observability.serviceMonitor.scrapeTimeout | quote }}
+{{- end }}
 {{- end }}

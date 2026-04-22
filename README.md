@@ -106,6 +106,56 @@ python3 scripts/local_smoke_cli.py --namespace default
 python3 scripts/local_smoke_cli.py --namespace default --with-ai --model-type 4
 ```
 
+## Alert Experiment (MTTD + Noise)
+
+Run a controlled fault-injection experiment to generate measurable alert quality data:
+
+```bash
+# 1) Ensure Prometheus/Grafana local port-forward
+python3 manage.py obs-ui-start
+
+# 2) Inject service-down fault and collect report
+python3 manage.py alert-experiment --namespace default
+```
+
+What this does:
+
+* Scales one deployment (default: `chat-service`) down to `0` for a short window.
+* Polls Prometheus for a target alert (default: `VisionRAGServiceTargetDown`).
+* Computes `MTTD` (fault start -> first firing detection).
+* Captures collateral firing alerts as a practical noise indicator.
+* Restores deployment replicas and waits for rollout completion.
+* Writes a JSON report to `reports/alert-experiments/`.
+
+Direct script usage (optional):
+
+```bash
+python3 scripts/alert_experiment.py --namespace default
+python3 scripts/alert_experiment.py --namespace default --deployment public-service --target-alert VisionRAGServiceTargetDown --inject-seconds 240
+```
+
+## Ops Benchmark (Percentage-Based)
+
+Run an A/B benchmark to compute percentage improvement for failure detection:
+
+```bash
+python3 manage.py benchmark --namespace default
+```
+
+What this does:
+
+* Path A (alert-driven): runs fault injection and measures alert `MTTD`.
+* Path B (manual baseline): runs the same fault injection and measures detection time with manual polling cadence.
+* Outputs `mttd_improvement_percent` using:
+  * `(manual_mttd - alert_mttd) / manual_mttd * 100`
+* Writes JSON report to `reports/benchmarks/`.
+
+Direct script usage (optional):
+
+```bash
+python3 scripts/ops_benchmark.py --namespace default --manual-poll-seconds 300
+```
+
 ## Local Ollama Model (Optional for Local Dev)
 
 For local model testing, run:
@@ -137,7 +187,7 @@ Default rule groups:
 
 * Availability: service target down, infra target down, deployment unavailable.
 * Stability: crash loop, restart burst, OOMKilled.
-* Capacity: chat CPU high, app pod memory high.
+* Capacity: CPU request utilization, CPU limit utilization, CPU throttling, memory limit utilization (app + infra).
 * Middleware: Redis down, Postgres down, RabbitMQ queue backlog high and critical.
 
 Tune thresholds in:

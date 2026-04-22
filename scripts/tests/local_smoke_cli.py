@@ -20,7 +20,8 @@ def run_cmd(args, check=True):
     proc = subprocess.run(args, capture_output=True, text=True)
     if check and proc.returncode != 0:
         cmd_text = " ".join(args)
-        raise RuntimeError(f"command failed: {cmd_text}\n{proc.stderr.strip()}")
+        raise RuntimeError(
+            f"command failed: {cmd_text}\n{proc.stderr.strip()}")
     return proc.stdout.strip()
 
 
@@ -39,7 +40,8 @@ def http_json(method, url, payload=None, headers=None, timeout=20):
         req_headers.update(headers)
     if payload is not None:
         body = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=body, headers=req_headers, method=method)
+    req = urllib.request.Request(
+        url, data=body, headers=req_headers, method=method)
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         text = resp.read().decode("utf-8")
         return json.loads(text) if text else {}
@@ -75,15 +77,18 @@ class PortForwardManager:
         log_file = os.path.join(PID_DIR, f"{name}.log")
         log_handle = open(log_file, "w")
         proc = subprocess.Popen(
-            ["kubectl", "-n", namespace, "port-forward", resource, f"{local_port}:{remote_port}"],
+            ["kubectl", "-n", namespace, "port-forward",
+                resource, f"{local_port}:{remote_port}"],
             stdout=log_handle,
             stderr=subprocess.STDOUT,
         )
         self.procs.append((name, proc, log_handle))
         if proc.poll() is not None:
-            raise RuntimeError(f"port-forward for {name} exited immediately (see {log_file})")
+            raise RuntimeError(
+                f"port-forward for {name} exited immediately (see {log_file})")
         if not wait_port("127.0.0.1", local_port, timeout=15):
-            raise RuntimeError(f"port-forward for {name} failed (see {log_file})")
+            raise RuntimeError(
+                f"port-forward for {name} failed (see {log_file})")
 
     def stop_all(self):
         for _, proc, log_handle in self.procs:
@@ -107,7 +112,8 @@ def decode_jwt_username(token):
     if len(parts) < 2:
         raise RuntimeError("invalid JWT format")
     payload = parts[1] + "=" * ((4 - len(parts[1]) % 4) % 4)
-    data = json.loads(base64.urlsafe_b64decode(payload.encode("utf-8")).decode("utf-8"))
+    data = json.loads(base64.urlsafe_b64decode(
+        payload.encode("utf-8")).decode("utf-8"))
     username = data.get("username")
     if not username:
         raise RuntimeError("username not found in JWT payload")
@@ -224,11 +230,14 @@ def app_health_checks(gateway_url, public_url, chat_url):
         raise RuntimeError(f"chat health failed: {chat_health}")
 
     if "go_" not in http_text("GET", f"{gateway_url}/metrics"):
-        raise RuntimeError("gateway metrics endpoint is not returning expected Prometheus text")
+        raise RuntimeError(
+            "gateway metrics endpoint is not returning expected Prometheus text")
     if "go_" not in http_text("GET", f"{public_url}/metrics"):
-        raise RuntimeError("public metrics endpoint is not returning expected Prometheus text")
+        raise RuntimeError(
+            "public metrics endpoint is not returning expected Prometheus text")
     if "go_" not in http_text("GET", f"{chat_url}/metrics"):
-        raise RuntimeError("chat metrics endpoint is not returning expected Prometheus text")
+        raise RuntimeError(
+            "chat metrics endpoint is not returning expected Prometheus text")
 
 
 def run_user_flow(namespace, gateway_url, with_ai, model_type):
@@ -239,7 +248,8 @@ def run_user_flow(namespace, gateway_url, with_ai, model_type):
     for i in range(register_attempts):
         unique = f"{int(time.time() * 1000)}_{random.randint(1000, 9999)}"
         email = f"smoke_{unique}@example.com"
-        captcha_resp = http_json("POST", f"{gateway_url}/api/v1/user/captcha", {"email": email})
+        captcha_resp = http_json(
+            "POST", f"{gateway_url}/api/v1/user/captcha", {"email": email})
         expect_code_ok(captcha_resp, "captcha")
         captcha = read_captcha_from_redis(namespace, email)
         register_resp = http_json(
@@ -297,7 +307,8 @@ def run_user_flow(namespace, gateway_url, with_ai, model_type):
         "session.history",
     )
     expect_code_ok(
-        http_json("GET", f"{gateway_url}/api/v1/AI/chat/sessions", headers=auth),
+        http_json(
+            "GET", f"{gateway_url}/api/v1/AI/chat/sessions", headers=auth),
         "ai.chat.sessions",
     )
 
@@ -320,8 +331,10 @@ def main():
         description="VisionRAG local smoke CLI: port-forward + health + register/login + chat/session",
     )
     parser.add_argument("--namespace", default="default")
-    parser.add_argument("--with-ai", action="store_true", help="also run model inference test")
-    parser.add_argument("--model-type", default="4", help='modelType for AI test, default "4" (Ollama)')
+    parser.add_argument("--with-ai", action="store_true",
+                        help="also run model inference test")
+    parser.add_argument("--model-type", default="4",
+                        help='modelType for AI test, default "4" (Ollama)')
     args = parser.parse_args()
 
     pf = PortForwardManager()

@@ -1,0 +1,55 @@
+{{- $obs := .Values.observability | default dict -}}
+{{- $am := get $obs "alertmanagerConfig" | default dict -}}
+{{- $amEnabled := get $am "enabled" | default false -}}
+{{- $amLabels := get $am "labels" | default dict -}}
+{{- $route := get $am "route" | default dict -}}
+{{- $receivers := get $am "receivers" | default dict -}}
+{{- $pagerWebhook := get (get $receivers "pager" | default dict) "webhookUrl" | default "" -}}
+{{- $noiseWebhook := get (get $receivers "noise" | default dict) "webhookUrl" | default "" -}}
+{{- if $amEnabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: visionrag-alert-routing
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "visionrag.labels" . | nindent 4 }}
+    {{- with $amLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  route:
+    receiver: default
+    groupBy:
+      {{- toYaml (get $route "groupBy" | default (list "alertname" "namespace" "team")) | nindent 6 }}
+    groupWait: {{ get $route "groupWait" | default "30s" | quote }}
+    groupInterval: {{ get $route "groupInterval" | default "5m" | quote }}
+    repeatInterval: {{ get $route "repeatInterval" | default "2h" | quote }}
+    routes:
+      - matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+        receiver: {{ ternary "pager" "default" (ne $pagerWebhook "") | quote }}
+        repeatInterval: {{ get $route "criticalRepeatInterval" | default "30m" | quote }}
+      - matchers:
+          - name: severity
+            matchType: "="
+            value: warning
+        receiver: {{ ternary "noise" "default" (ne $noiseWebhook "") | quote }}
+        repeatInterval: {{ get $route "warningRepeatInterval" | default "4h" | quote }}
+  receivers:
+    - name: default
+    {{- if ne $pagerWebhook "" }}
+    - name: pager
+      webhookConfigs:
+        - url: {{ $pagerWebhook | quote }}
+          sendResolved: true
+    {{- end }}
+    {{- if ne $noiseWebhook "" }}
+    - name: noise
+      webhookConfigs:
+        - url: {{ $noiseWebhook | quote }}
+          sendResolved: true
+    {{- end }}
+{{- end }}

@@ -142,9 +142,29 @@ observability:
       cpuRequestUtilizationPercentWarning: 80
       cpuLimitUtilizationPercentWarning: 90
       cpuThrottlingPercentWarning: 20
-      appPodMemoryMiBWarning: 600
+      memoryLimitUtilizationPercentWarning: 90
       queueMessagesWarning: 100
       queueMessagesCritical: 1000
+  alertmanagerConfig:
+    enabled: true
+    labels:
+      alertmanagerConfig: visionrag
+      release: kube-prometheus-stack
+    route:
+      groupBy:
+        - alertname
+        - namespace
+        - team
+      groupWait: 30s
+      groupInterval: 5m
+      repeatInterval: 2h
+      criticalRepeatInterval: 30m
+      warningRepeatInterval: 4h
+    receivers:
+      pager:
+        webhookUrl: ""
+      noise:
+        webhookUrl: ""
   grafanaDashboard:
     enabled: true
     namespace: monitoring

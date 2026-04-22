@@ -55,7 +55,6 @@ Infra/redis_data/
 Infra/rabbitmq_data/
 
 # IDEs
-# IDEs
 .idea/
 .vscode/
 
@@ -63,10 +62,16 @@ Infra/rabbitmq_data/
 **/config/config.toml
 config.toml
 
+# Monitoring & Reports & Docs
+reports/
+docs/
+monitoring/kube-prometheus-stack.values.yaml
+
 # Kubernetes Secrets and Environment files
 k8s/**/*-env.yaml
 k8s/**/secret.yaml
-charts/**/values-*.yaml
+charts/visionrag-platform/values-*.yaml
+!charts/visionrag-platform/values.yaml
 .env
 *.env.local
 .secrets/*.env
