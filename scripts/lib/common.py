@@ -18,7 +18,9 @@ SERVICES = {
     "public": {"path": "services/PublicServiceGo", "image": "visionrag-public"},
     "chat": {"path": "services/ChatServiceGo", "image": "visionrag-chat"},
     "gateway": {"path": "services/GatewayServiceGo", "image": "visionrag-gateway"},
+    "combined-shop": {"path": "services/CombinedShopServiceCs", "image": "visionrag-combined-shop"},
 }
+
 
 def run_command(cmd, description):
     print(f"{BLUE}==>{RESET} {description}...")
@@ -29,6 +31,7 @@ def run_command(cmd, description):
         print(f"{RED}  Error during: {description}{RESET}")
         sys.exit(1)
 
+
 def run_command_soft(cmd, description):
     print(f"{BLUE}==>{RESET} {description}...")
     result = subprocess.run(cmd, shell=True)
@@ -37,14 +40,17 @@ def run_command_soft(cmd, description):
     else:
         print(f"{YELLOW}  Skip (non-blocking): {description}{RESET}")
 
+
 def abort_with_message(message):
     print(f"{RED}{message}{RESET}")
     sys.exit(1)
 
+
 def resolve_values_file(environment, explicit_values_file):
     if explicit_values_file:
         if not os.path.exists(explicit_values_file):
-            abort_with_message(f"Values file not found: {explicit_values_file}")
+            abort_with_message(
+                f"Values file not found: {explicit_values_file}")
         return explicit_values_file
 
     env_values_file = f"{CHART_PATH}/values-{environment}.yaml"
@@ -52,6 +58,7 @@ def resolve_values_file(environment, explicit_values_file):
         return env_values_file
 
     return f"{CHART_PATH}/values.yaml"
+
 
 def resolve_image_tag():
     forced_tag = os.getenv("VISIONRAG_IMAGE_TAG", "").strip()

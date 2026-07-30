@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api', // 使用代理路径，开发环境会自动代理到后端
-  timeout: 0  //不启用超时机制
+  baseURL: '/api', // 使用代理路径，开发环境会自动代理到后端 Go 网关
+  timeout: 0  // 不启用超时机制
 })
 
 // 请求拦截器

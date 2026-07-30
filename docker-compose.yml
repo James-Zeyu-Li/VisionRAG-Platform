@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -10,7 +8,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: visionrag
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,7 +22,7 @@ services:
     container_name: visionrag-redis
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
 
@@ -36,19 +34,19 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
   gateway-service:
     build: 
-      context: services/GatewayServiceGo
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/GatewayServiceGo/Dockerfile
     container_name: visionrag-gateway
     restart: always
     ports:
-      - "9000:9000"
+      - "9090:9000"
     environment:
       - PUBLIC_SERVICE_URL=http://public-service:9090
       - CHAT_SERVICE_URL=http://chat-service:9092
@@ -68,6 +66,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_NAME=visionrag
+      - DB_TIMEZONE=UTC
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
     depends_on:
@@ -88,6 +87,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_NAME=visionrag
+      - DB_TIMEZONE=UTC
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
     depends_on:

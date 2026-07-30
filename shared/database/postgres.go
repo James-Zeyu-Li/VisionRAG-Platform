@@ -25,6 +25,9 @@ func InitDB(cfg DBConfig, isDebug bool) (*gorm.DB, error) {
 	if cfg.SSLMode == "" {
 		cfg.SSLMode = "disable"
 	}
+	if cfg.TimeZone == "" {
+		cfg.TimeZone = "UTC"
+	}
 	if cfg.MaxRetries <= 0 {
 		cfg.MaxRetries = 30
 	}

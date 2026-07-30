@@ -2,6 +2,10 @@
 .DS_Store
 Thumbs.db
 
+# PID & Temporary Process Files
+.*.pid
+*.pid
+
 # Go
 CoreServiceGo/server
 services/*/server
@@ -23,7 +27,7 @@ build/
 dist/
 *.egg-info/
 
-# C# / .NET (GatewayCshard)
+# C# / .NET
 [Bb]in/
 [Oo]bj/
 *.user
@@ -32,27 +36,26 @@ dist/
 .vs/
 .vscode/
 *.suo
-*.user
-*.userosscache
-*.sln.docstates
 
-# Node.js / React (WebReact)
-WebReact/node_modules/
-vue-frontend/node_modules/
-WebReact/build/
-WebReact/dist/
-WebReact/.env.local
-WebReact/.env.development.local
-WebReact/.env.test.local
-WebReact/.env.production.local
-WebReact/npm-debug.log*
-WebReact/yarn-debug.log*
-WebReact/yarn-error.log*
+# Node.js / React (frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
 
 # Infrastructure / Docker
 Infra/mysql_data/
 Infra/redis_data/
 Infra/rabbitmq_data/
+postgres_data/
+redis_data/
+rabbitmq_data/
 
 # IDEs
 .idea/
