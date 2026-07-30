@@ -1,51 +1,99 @@
 # VisionRAG Platform
 
+VisionRAG is a microservices-based AI document intelligence and streaming RAG platform.
+
+> **Frontend Upgrade Note**: The frontend has been fully migrated and upgraded from **Vue 3** to a modern **React 19 + Material UI (MUI)** architecture built with **Vite**, maintaining 100% functional parity with zero backend changes.
+
+---
+
 ## Architecture Overview
-VisionRAG is a microservices-based AI document intelligence platform.
-The architecture uses **Go** for high-performance service orchestration and **Python** for AI workloads.
+
+The platform uses **React 19** for the client layer, **Go** for high-performance service orchestration and streaming, and **Python** for AI workloads (RAG / ONNX inference).
+
+```
+ ┌─────────────────────────────────────────────────────────────┐
+ │                  React 19 + MUI Frontend                    │
+ │                  (Vite SPA, Port: 8080)                     │
+ └──────────────────────────────┬──────────────────────────────┘
+                                │ HTTP / SSE Stream
+                                ▼
+ ┌─────────────────────────────────────────────────────────────┐
+ │                     Gateway Service (Go)                    │
+ │               (Unified Gateway, Port: 9090)                 │
+ └──────────────────────────────┬──────────────────────────────┘
+                                │
+         ┌──────────────────────┴──────────────────────┐
+         ▼                                             ▼
+┌──────────────────┐                         ┌──────────────────┐
+│  Public Service  │                         │   Chat Service   │
+│     (Go API)     │                         │ (Go Stream / RAG)│
+└────────┬─────────┘                         └────────┬─────────┘
+         │                                            │
+         ├──────────────────────┬─────────────────────┤
+         ▼                      ▼                     ▼
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│  PostgreSQL 16   │  │    Redis 6.2     │  │   RabbitMQ 3.9   │
+│  (DB, Port 5433) │  │(Cache/Vector:6380│  │(Broker,Port15673)│
+└──────────────────┘  └──────────────────┘  └────────┬─────────┘
+                                                      │ Async Tasks
+                                                      ▼
+                                            ┌──────────────────┐
+                                            │ AI Worker (Py)   │
+                                            │(ONNX / Ollama)   │
+                                            └──────────────────┘
+```
 
 ### Microservices
-1.  **Gateway Service (Go)**: `GatewayServiceGo`
-    *   **Role**: Unified API Entry Point & Identity Provider.
-    *   **Responsibilities**:
-        *   User Authentication (JWT).
-        *   User Management (Register/Login).
-        *   Request Rate Limiting.
-        *   Reverse Proxy (Forwarding requests to ChatService).
-    *   **Port**: 9000 (exposed)
+1. **Frontend App (`frontend`)**:
+   * **Tech Stack**: React 19, Material UI (MUI), React Router 7, Vite.
+   * **Features**: SSE typewriter stream rendering, multi-model selection (Bailian LLM, RAG, Ollama), Markdown rendering, document upload (.md/.txt), TTS playback, ONNX image classification.
+   * **Port**: `http://localhost:8080`
 
-2.  **Chat Service (Go)**: `ChatServiceGo`
-    *   **Role**: Core Business Logic.
-    *   **Responsibilities**:
-        *   Session Management.
-        *   Message History / Storage.
-        *   Async Communication with AI Workers (RabbitMQ).
-    *   **Port**: 9092 (internal)
+2. **Gateway Service (`GatewayServiceGo`)**:
+   * **Role**: Unified API Entry Point & Identity Provider.
+   * **Responsibilities**: User Authentication (JWT), Reverse Proxy, Rate Limiting.
+   * **Port**: `http://localhost:9090` (exposed)
 
-3.  **AI Worker (Python)**: `AiWorkerPy`
-    *   **Role**: AI Inference Engine.
-    *   **Responsibilities**:
-        *   RAG (Retrieval-Augmented Generation).
-        *   LLM Interaction.
-        *   Consumes tasks from RabbitMQ.
+3. **Public Service (`PublicServiceGo`)**:
+   * **Role**: Identity & User Management.
+   * **Responsibilities**: Register, Login, Captcha, DB persistence, publishing user events to RabbitMQ.
 
-## Infrastructure
-*   **PostgreSQL**: Persistent storage for Users and Chat History.
-*   **Redis**: Caching, Rate Limiting, and Captcha storage.
-*   **RabbitMQ**: Asynchronous message broker decoupling Chat Service and AI Worker.
+4. **Chat Service (`ChatServiceGo`)**:
+   * **Role**: Core Business Logic & Streaming RAG.
+   * **Responsibilities**: Session Management, History Storage, Eino RAG pipeline, Redis Vector Search, HTTP SSE Stream Flushers.
+
+5. **AI Worker (`AiWorkerPy`)**:
+   * **Role**: AI Inference Engine.
+   * **Responsibilities**: ONNX image classification, Ollama LLM integration, consuming tasks asynchronously from RabbitMQ.
+
+---
 
 ## Getting Started
 
-### 1. Start Infrastructure and Services
-The entire stack is containerized. Run the following command in the root directory:
+### 1. One-Command Start (Recommended)
+Run the automated launcher script at the root directory:
 
 ```bash
-docker-compose up -d --build
+./start.sh
 ```
 
-### 2. Verify Services
-*   **Gateway health/login entry**: `http://localhost:9000/api/v1/user/login`
-*   **Chat service**: internal by default in compose (`chat-service:9092`)
+This will automatically:
+- Spin up all backend microservices, PostgreSQL, Redis, and RabbitMQ via Docker.
+- Start the React 19 frontend development server on `http://localhost:8080`.
+
+### 2. Verify Services & Access Links
+- **React 19 Frontend App**: [http://localhost:8080](http://localhost:8080)
+- **Go Gateway API**: [http://localhost:9090](http://localhost:9090)
+- **RabbitMQ Dashboard**: [http://localhost:15673](http://localhost:15673) (User: `guest`, Pass: `guest`)
+
+### 3. One-Command Shutdown
+To safely stop all frontend processes and Docker containers:
+
+```bash
+./end.sh
+```
+
+---
 
 ## Kubernetes Secret Management
 
@@ -62,12 +110,12 @@ scripts/apply-k8s-secret.sh --deploy
 ```
 
 Default secret name:
-
 * `visionrag-platform-secrets`
 
 Default env source file:
-
 * `.secrets/visionrag.env`
+
+---
 
 ## Helm Environment Profiles
 
@@ -86,10 +134,11 @@ helm upgrade --install visionrag charts/visionrag-platform -n default -f charts/
 helm upgrade --install visionrag charts/visionrag-platform -n default -f charts/visionrag-platform/values-gcp.yaml
 ```
 
+---
+
 ## Local Smoke Test CLI
 
 Run one command to validate:
-
 * Kubernetes service port-forward (gateway/public/chat)
 * App health and metrics (`/health`, `/metrics`)
 * Internal dependency health (Redis, RabbitMQ, PostgreSQL)
@@ -106,6 +155,8 @@ python3 scripts/local_smoke_cli.py --namespace default
 python3 scripts/local_smoke_cli.py --namespace default --with-ai --model-type 4
 ```
 
+---
+
 ## Alert Experiment (MTTD + Noise)
 
 Run a controlled fault-injection experiment to generate measurable alert quality data:
@@ -119,7 +170,6 @@ python3 manage.py alert-experiment --namespace default
 ```
 
 What this does:
-
 * Scales one deployment (default: `chat-service`) down to `0` for a short window.
 * Polls Prometheus for a target alert (default: `VisionRAGServiceTargetDown`).
 * Computes `MTTD` (fault start -> first firing detection).
@@ -134,6 +184,8 @@ python3 scripts/alert_experiment.py --namespace default
 python3 scripts/alert_experiment.py --namespace default --deployment public-service --target-alert VisionRAGServiceTargetDown --inject-seconds 240
 ```
 
+---
+
 ## Ops Benchmark (Percentage-Based)
 
 Run an A/B benchmark to compute percentage improvement for failure detection:
@@ -143,7 +195,6 @@ python3 manage.py benchmark --namespace default
 ```
 
 What this does:
-
 * Path A (alert-driven): runs fault injection and measures alert `MTTD`.
 * Path B (manual baseline): runs the same fault injection and measures detection time with manual polling cadence.
 * Outputs `mttd_improvement_percent` using:
@@ -156,6 +207,8 @@ Direct script usage (optional):
 python3 scripts/ops_benchmark.py --namespace default --manual-poll-seconds 300
 ```
 
+---
+
 ## Local Ollama Model (Optional for Local Dev)
 
 For local model testing, run:
@@ -165,16 +218,16 @@ python3 services/AiWorkerPy/ollama_local_worker.py "hello"
 ```
 
 Environment variables:
-
 * `OLLAMA_BASE_URL` (default: `http://127.0.0.1:11434`)
 * `OLLAMA_MODEL_NAME` (default: `qwen2.5:1.5b`)
 
-In Chat service, set request `modelType` to `"4"` to use Ollama.
+In Chat service or Frontend UI, set request `modelType` to `"4"` to use Ollama.
+
+---
 
 ## Observability Status
 
 Current state:
-
 * Services expose `/metrics`.
 * K8s services include `prometheus.io/scrape` annotations.
 * Redis/Postgres/RabbitMQ metrics endpoints are enabled in chart templates.
@@ -184,31 +237,10 @@ Current state:
 ### Alert Rules (Helm)
 
 Default rule groups:
-
 * Availability: service target down, infra target down, deployment unavailable.
 * Stability: crash loop, restart burst, OOMKilled.
 * Capacity: CPU request utilization, CPU limit utilization, CPU throttling, memory limit utilization (app + infra).
 * Middleware: Redis down, Postgres down, RabbitMQ queue backlog high and critical.
 
 Tune thresholds in:
-
 * `charts/visionrag-platform/values.yaml` -> `observability.prometheusRule.thresholds`
-
-Quick checks:
-
-```bash
-kubectl -n default get prometheusrule
-kubectl -n default get prometheusrule visionrag-platform-alert-rules -o yaml
-```
-
-Recommended next steps:
-
-* Deploy `kube-prometheus-stack` (Prometheus + Grafana + Alertmanager).
-* Add `ServiceMonitor`/`PodMonitor` resources in Helm chart.
-* Add baseline alerts: pod restart spikes, 5xx rate, latency, queue depth, DB availability.
-
-## Roadmap
-- [ ] **Gateway**: Implement JWT Authentication & Rate Limiting (Token Bucket).
-- [ ] **Gateway**: Implement Reverse Proxy logic to forward `/session` requests to Chat Service.
-- [ ] **Chat**: Implement RabbitMQ Producer for chat messages.
-- [ ] **AI Worker**: Implement Python consumer for RAG tasks.
