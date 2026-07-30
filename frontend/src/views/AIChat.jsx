@@ -60,23 +60,19 @@ export default function AIChat() {
 
   // 同步历史会话
   const syncHistory = async () => {
+    if (!currentSessionId || tempSession) return
     try {
-      const response = await api.get('/chat/history')
+      const response = await api.post('/AI/chat/history', { sessionId: String(currentSessionId) })
       if (response.data && response.data.status_code === 1000) {
-        const backendSessions = response.data.sessions || {}
-        setSessions(backendSessions)
-        const sessionIds = Object.keys(backendSessions)
-        if (sessionIds.length > 0 && (!currentSessionId || !backendSessions[currentSessionId])) {
-          const firstId = sessionIds[0]
-          setCurrentSessionId(firstId)
-          setCurrentMessages(backendSessions[firstId].messages || [])
-          setTempSession(false)
-        }
-        setToast({ open: true, message: '历史数据同步成功', severity: 'success' })
+        const historyList = response.data.history || []
+        const formattedMessages = historyList.map(item => ({
+          role: item.is_user ? 'user' : 'assistant',
+          content: item.content
+        }))
+        setCurrentMessages(formattedMessages)
       }
     } catch (error) {
       console.error('Failed to sync history:', error)
-      setToast({ open: true, message: '同步历史数据失败', severity: 'error' })
     }
   }
 
@@ -96,15 +92,19 @@ export default function AIChat() {
   }
 
   // 播放 TTS 语音
-  const playTTS = async (text) => {
-    try {
-      const response = await api.post('/tts/generate', { text }, { responseType: 'blob' })
-      const audioUrl = URL.createObjectURL(response.data)
-      const audio = new Audio(audioUrl)
-      audio.play()
-    } catch (error) {
-      console.error('TTS error:', error)
-      setToast({ open: true, message: 'TTS 播放失败', severity: 'error' })
+  // 播放 TTS 语音 (结合浏览器原生 Web Speech API 实现零延迟免费朗读)
+  const playTTS = (text) => {
+    if (!text) return
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel() // 停止之前的朗读
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'zh-CN'
+      utterance.rate = 1.0
+      utterance.pitch = 1.0
+      window.speechSynthesis.speak(utterance)
+      setToast({ open: true, message: '正在语音朗读回答...', severity: 'info' })
+    } else {
+      setToast({ open: true, message: '当前浏览器不支持语音合成', severity: 'error' })
     }
   }
 

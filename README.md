@@ -70,16 +70,21 @@ The platform uses **React 19** for the client layer, **Go** for high-performance
 
 ## Getting Started
 
-### 1. One-Command Start (Recommended)
-Run the automated launcher script at the root directory:
+### 1. Interactive CLI Launcher (Recommended)
+Run the root interactive control script:
 
 ```bash
 ./start.sh
 ```
 
-This will automatically:
-- Spin up all backend microservices, PostgreSQL, Redis, and RabbitMQ via Docker.
-- Start the React 19 frontend development server on `http://localhost:8080`.
+This presents a clean selectable menu:
+* **Option 1**: Start Docker Services (Backend + React 19 Frontend + Ollama)
+* **Option 2**: Stop Docker Services (All Containers & Frontend)
+* **Option 3**: Deploy to Kubernetes / Minikube
+* **Option 4**: Run Local Smoke Tests
+* **Option 5**: Run Alert MTTD Experiment
+
+*(Direct argument usage is also supported: `./start.sh 1` or `./start.sh 2`)*
 
 ### 2. Verify Services & Access Links
 - **React 19 Frontend App**: [http://localhost:8080](http://localhost:8080)
@@ -90,7 +95,7 @@ This will automatically:
 To safely stop all frontend processes and Docker containers:
 
 ```bash
-./end.sh
+./docker-end.sh
 ```
 
 ---

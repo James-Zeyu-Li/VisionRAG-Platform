@@ -24,7 +24,7 @@ func buildModelConfig(userName, modelType string) map[string]interface{} {
 	if modelType == "4" {
 		baseURL := os.Getenv("OLLAMA_BASE_URL")
 		if baseURL == "" {
-			baseURL = "http://127.0.0.1:11434"
+			baseURL = "http://host.docker.internal:11434"
 		}
 		modelName := os.Getenv("OLLAMA_MODEL_NAME")
 		if modelName == "" {

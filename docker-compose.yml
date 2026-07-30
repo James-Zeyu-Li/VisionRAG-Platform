@@ -81,6 +81,8 @@ services:
       dockerfile: services/ChatServiceGo/Dockerfile
     container_name: visionrag-chat
     restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # 允许 Docker 容器访问 Mac 宿主机上的 Ollama 服务
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -90,6 +92,7 @@ services:
       - DB_TIMEZONE=UTC
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
     depends_on:
       postgres:
         condition: service_healthy
